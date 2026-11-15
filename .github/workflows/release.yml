@@ -1,0 +1,60 @@
+name: Gerar instalador e publicar release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Definir versão
+        shell: pwsh
+        run: |
+          if ("${{ github.ref_type }}" -eq "tag") { $v = "${{ github.ref_name }}".TrimStart("v") } else { $v = "0.0.0-dev" }
+          "VERSION=$v" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Publicar aplicativo
+        shell: pwsh
+        run: >
+          dotnet publish SpinVault.csproj -c Release -r win-x64 --self-contained true
+          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:Version=$env:VERSION -o publish
+
+      - name: Instalar Inno Setup
+        shell: pwsh
+        run: choco install innosetup --no-progress -y
+
+      - name: Gerar instalador
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          $appVer = ($env:VERSION -split "-")[0]
+          & $iscc "/DAppVersion=$appVer" "installer\SpinVault.iss"
+          if ($LASTEXITCODE -ne 0) { throw "Falha no Inno Setup" }
+
+      - name: Gerar versão portátil (.zip)
+        shell: pwsh
+        run: Compress-Archive -Path publish\SpinVault.exe -DestinationPath "dist\SpinVault-portatil-$env:VERSION.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: instalador
+          path: dist/*
+
+      - name: Publicar release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true

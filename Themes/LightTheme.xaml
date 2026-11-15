@@ -1,0 +1,40 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Tema claro: tom de papel de encarte, mesmo acento âmbar.
+         As chaves precisam ser as mesmas do DarkTheme.xaml. -->
+    <SolidColorBrush x:Key="WindowBackgroundBrush" Color="#F5F2EA" />
+    <SolidColorBrush x:Key="SidebarBrush" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="SurfaceAltBrush" Color="#F1ECE0" />
+    <SolidColorBrush x:Key="SurfaceHoverBrush" Color="#E9E2D2" />
+    <SolidColorBrush x:Key="LineBrush" Color="#E2DACA" />
+
+    <SolidColorBrush x:Key="TextPrimaryBrush" Color="#1B1F2A" />
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="#5F677B" />
+    <SolidColorBrush x:Key="TextMutedBrush" Color="#98A0B2" />
+
+    <SolidColorBrush x:Key="AccentBrush" Color="#D97706" />
+    <SolidColorBrush x:Key="AccentSoftBrush" Color="#26D97706" />
+    <SolidColorBrush x:Key="AccentForegroundBrush" Color="#FFFFFF" />
+    <LinearGradientBrush x:Key="AccentGradientBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#F59E0B" Offset="0" />
+        <GradientStop Color="#EA580C" Offset="1" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="ErrorBrush" Color="#DC2626" />
+
+    <!-- Brilho ambiente no canto da área de conteúdo e fundo das etiquetas sobre as capas -->
+    <RadialGradientBrush x:Key="AmbientGlowBrush" Center="0.9,0" GradientOrigin="0.9,0" RadiusX="0.75" RadiusY="0.55">
+        <GradientStop Color="#33F59E0B" Offset="0" />
+        <GradientStop Color="#00F59E0B" Offset="1" />
+    </RadialGradientBrush>
+    <SolidColorBrush x:Key="BadgeGlassBrush" Color="#B3000000" />
+
+    <SolidColorBrush x:Key="DiscBodyBrush" Color="#2B2D36" />
+    <SolidColorBrush x:Key="DiscGrooveBrush" Color="#454957" />
+    <SolidColorBrush x:Key="ScrollThumbBrush" Color="#CFC6B2" />
+
+    <!-- Cores das mídias (iguais nos dois temas) -->
+    <SolidColorBrush x:Key="VinylBrush" Color="#F59E0B" />
+    <SolidColorBrush x:Key="CdBrush" Color="#2FA8F0" />
+    <SolidColorBrush x:Key="CassetteBrush" Color="#A863F0" />
+</ResourceDictionary>
