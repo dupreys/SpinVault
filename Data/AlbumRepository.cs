@@ -7,7 +7,8 @@ namespace ColecaoMidias.Data;
 public sealed class AlbumRepository
 {
     private const string Columns =
-        "Id, Title, Artist, Format, ReleaseDate, PurchaseYear, PriceCents, CoverFile, Notes, IsWishlist";
+        "Id, Title, Artist, Format, ReleaseDate, PurchaseYear, PriceCents, CoverFile, Notes, IsWishlist, " +
+        "Genre, Tags, Rating, MediaCondition, CoverCondition, PurchasePlace";
 
     private readonly Database _db;
 
@@ -58,7 +59,9 @@ public sealed class AlbumRepository
         command.CommandText = """
             UPDATE Albums SET
                 Title = $title, Artist = $artist, Format = $format, ReleaseDate = $release,
-                PurchaseYear = $year, PriceCents = $price, CoverFile = $cover, Notes = $notes, IsWishlist = $wishlist
+                PurchaseYear = $year, PriceCents = $price, CoverFile = $cover, Notes = $notes, IsWishlist = $wishlist,
+                Genre = $genre, Tags = $tags, Rating = $rating, MediaCondition = $mediaCondition,
+                CoverCondition = $coverCondition, PurchasePlace = $place
             WHERE Id = $id
             """;
         Bind(command, album);
@@ -98,8 +101,10 @@ public sealed class AlbumRepository
         using var command = connection.CreateCommand();
         command.Transaction = transaction;
         command.CommandText = """
-            INSERT INTO Albums (Title, Artist, Format, ReleaseDate, PurchaseYear, PriceCents, CoverFile, Notes, IsWishlist)
-            VALUES ($title, $artist, $format, $release, $year, $price, $cover, $notes, $wishlist);
+            INSERT INTO Albums (Title, Artist, Format, ReleaseDate, PurchaseYear, PriceCents, CoverFile, Notes, IsWishlist,
+                                Genre, Tags, Rating, MediaCondition, CoverCondition, PurchasePlace)
+            VALUES ($title, $artist, $format, $release, $year, $price, $cover, $notes, $wishlist,
+                    $genre, $tags, $rating, $mediaCondition, $coverCondition, $place);
             SELECT last_insert_rowid();
             """;
         Bind(command, album);
@@ -121,6 +126,41 @@ public sealed class AlbumRepository
         command.Parameters.AddWithValue("$cover", (object?)album.CoverFile ?? DBNull.Value);
         command.Parameters.AddWithValue("$notes", (object?)album.Notes ?? DBNull.Value);
         command.Parameters.AddWithValue("$wishlist", album.IsWishlist ? 1 : 0);
+        command.Parameters.AddWithValue("$genre", (object?)NullIfBlank(album.Genre) ?? DBNull.Value);
+        command.Parameters.AddWithValue("$tags", (object?)NullIfBlank(album.Tags) ?? DBNull.Value);
+        command.Parameters.AddWithValue("$rating", Math.Clamp(album.Rating, 0, 5));
+        command.Parameters.AddWithValue("$mediaCondition", (object?)NullIfBlank(album.MediaCondition) ?? DBNull.Value);
+        command.Parameters.AddWithValue("$coverCondition", (object?)NullIfBlank(album.CoverCondition) ?? DBNull.Value);
+        command.Parameters.AddWithValue("$place", (object?)NullIfBlank(album.PurchasePlace) ?? DBNull.Value);
+    }
+
+    private static string? NullIfBlank(string? text) => string.IsNullOrWhiteSpace(text) ? null : text.Trim();
+
+    /// <summary>Gêneros e listas já usados (do mais para o menos frequente), para sugerir no editor.</summary>
+    public (IReadOnlyList<string> Genres, IReadOnlyList<string> Tags) GetKnownGenresAndTags()
+    {
+        var genres = new Dictionary<string, (string Name, int Count)>(StringComparer.OrdinalIgnoreCase);
+        var tags = new Dictionary<string, (string Name, int Count)>(StringComparer.OrdinalIgnoreCase);
+
+        using var connection = _db.Open();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT Genre, Tags FROM Albums";
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            if (!reader.IsDBNull(0) && reader.GetString(0).Trim() is { Length: > 0 } genre)
+                genres[genre] = genres.TryGetValue(genre, out var g) ? (g.Name, g.Count + 1) : (genre, 1);
+
+            if (!reader.IsDBNull(1))
+                foreach (var tag in TagUtil.Split(reader.GetString(1)))
+                    tags[tag] = tags.TryGetValue(tag, out var t) ? (t.Name, t.Count + 1) : (tag, 1);
+        }
+
+        static IReadOnlyList<string> Ordered(Dictionary<string, (string Name, int Count)> map) =>
+            map.Values.OrderByDescending(v => v.Count).ThenBy(v => v.Name, StringComparer.CurrentCultureIgnoreCase)
+               .Select(v => v.Name).ToList();
+
+        return (Ordered(genres), Ordered(tags));
     }
 
     private static Album Map(SqliteDataReader r) => new()
@@ -136,6 +176,12 @@ public sealed class AlbumRepository
         Price = r.GetInt64(6) / 100m,
         CoverFile = r.IsDBNull(7) ? null : r.GetString(7),
         Notes = r.IsDBNull(8) ? null : r.GetString(8),
-        IsWishlist = r.GetInt32(9) != 0
+        IsWishlist = r.GetInt32(9) != 0,
+        Genre = r.IsDBNull(10) ? null : r.GetString(10),
+        Tags = r.IsDBNull(11) ? null : r.GetString(11),
+        Rating = r.IsDBNull(12) ? 0 : r.GetInt32(12),
+        MediaCondition = r.IsDBNull(13) ? null : r.GetString(13),
+        CoverCondition = r.IsDBNull(14) ? null : r.GetString(14),
+        PurchasePlace = r.IsDBNull(15) ? null : r.GetString(15)
     };
 }

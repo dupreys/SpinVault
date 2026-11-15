@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using ColecaoMidias.Data;
 using ColecaoMidias.Models;
 using ColecaoMidias.Services;
@@ -37,6 +38,39 @@ public partial class AlbumEditViewModel : ObservableObject
     [ObservableProperty] private string purchaseYearText = "";
     [ObservableProperty] private string priceText = "";
     [ObservableProperty] private string notes = "";
+
+    // ----- Notas pessoais, gênero e listas (v1.1) -----
+    [ObservableProperty] private string genre = "";
+    [ObservableProperty] private string purchasePlace = "";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(MediaConditionLabel))]
+    private string mediaCondition = "";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CoverConditionLabel))]
+    private string coverCondition = "";
+
+    [ObservableProperty] private int rating;
+    [ObservableProperty] private string newTagText = "";
+
+    public string MediaConditionLabel => MediaCondition.Length == 0 ? "Sem informação" : Conditions.Label(MediaCondition);
+    public string CoverConditionLabel => CoverCondition.Length == 0 ? "Sem informação" : Conditions.Label(CoverCondition);
+
+    /// <summary>Nota, conservação e local de compra só fazem sentido para o que já foi comprado.</summary>
+    public bool ShowCollectionFields => !_isWishlist;
+
+    public ObservableCollection<StarItem> Stars { get; } = new(Enumerable.Range(1, 5).Select(n => new StarItem(n)));
+    public ObservableCollection<ChoiceItem> MediaConditions { get; } = new();
+    public ObservableCollection<ChoiceItem> CoverConditions { get; } = new();
+    public ObservableCollection<TagChoice> TagChoices { get; } = new();
+    public IReadOnlyList<string> GenreSuggestions { get; private set; } = Array.Empty<string>();
+
+    private static readonly string[] CommonGenres =
+    {
+        "Rock", "Pop", "MPB", "Jazz", "Blues", "Metal", "Rock progressivo", "Eletrônica",
+        "Clássica", "Hip hop", "Soul", "Reggae", "Samba", "Country", "Folk"
+    };
     [ObservableProperty] private string errorMessage = "";
 
     /// <summary>Mensagem da busca de capa online (ex.: "Buscando capa…").</summary>
@@ -60,6 +94,8 @@ public partial class AlbumEditViewModel : ObservableObject
         _isWishlist = isWishlist && !isPurchase;
         _isPurchase = isPurchase;
 
+        BuildChoices(original);
+
         if (original is null)
         {
             if (!_isWishlist)
@@ -75,9 +111,69 @@ public partial class AlbumEditViewModel : ObservableObject
         PriceText = original.Price.ToString("0.00", Fmt.PtBr);
         Notes = original.Notes ?? "";
         CoverPreview = original.CoverFile;
+        Genre = original.Genre ?? "";
+        PurchasePlace = original.PurchasePlace ?? "";
+        MediaCondition = original.MediaCondition ?? "";
+        CoverCondition = original.CoverCondition ?? "";
+        Rating = original.Rating;
 
         if (_isPurchase)
             PurchaseYearText = DateTime.Now.Year.ToString();   // compra feita agora; o preço-alvo vira o valor inicial
+    }
+
+    private void BuildChoices(Album? original)
+    {
+        foreach (var grade in new[] { new ConditionGrade("", "—") }.Concat(Conditions.All))
+        {
+            var tip = grade.Code.Length == 0 ? "Sem informação" : grade.Label;
+
+            var media = new ChoiceItem(grade.Code, grade.Code.Length == 0 ? "—" : grade.Code, tip)
+                { IsSelected = grade.Code == (original?.MediaCondition ?? "") };
+            media.Chosen += c => MediaCondition = c.Key;
+            MediaConditions.Add(media);
+
+            var cover = new ChoiceItem(grade.Code, grade.Code.Length == 0 ? "—" : grade.Code, tip)
+                { IsSelected = grade.Code == (original?.CoverCondition ?? "") };
+            cover.Chosen += c => CoverCondition = c.Key;
+            CoverConditions.Add(cover);
+        }
+
+        // Listas: as padrão + todas que já existem + as deste álbum.
+        var (knownGenres, knownTags) = _repository.GetKnownGenresAndTags();
+        var selected = original?.TagList ?? Array.Empty<string>();
+        foreach (var name in TagUtil.Defaults.Concat(knownTags).Concat(selected).Distinct(StringComparer.OrdinalIgnoreCase))
+            TagChoices.Add(new TagChoice(name, selected.Contains(name, StringComparer.OrdinalIgnoreCase)));
+
+        GenreSuggestions = knownGenres.Concat(CommonGenres).Distinct(StringComparer.OrdinalIgnoreCase).Take(14).ToList();
+    }
+
+    partial void OnRatingChanged(int value)
+    {
+        foreach (var star in Stars)
+            star.Filled = star.Number <= value;
+    }
+
+    /// <summary>Clicar na estrela marca a nota; clicar de novo na mesma tira a nota.</summary>
+    [RelayCommand]
+    private void SetRating(int number) => Rating = Rating == number ? 0 : number;
+
+    [RelayCommand]
+    private void PickGenre(string? name) => Genre = name ?? "";
+
+    [RelayCommand]
+    private void AddTag()
+    {
+        var name = TagUtil.Clean(NewTagText);
+        if (name.Length == 0)
+            return;
+
+        var existing = TagChoices.FirstOrDefault(t => t.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+        if (existing is null)
+            TagChoices.Add(new TagChoice(name, true));
+        else
+            existing.IsSelected = true;
+
+        NewTagText = "";
     }
 
     /// <summary>Busca artista e data de lançamento na internet só pelo nome do álbum.</summary>
@@ -328,7 +424,13 @@ public partial class AlbumEditViewModel : ObservableObject
                 Price = price,
                 CoverFile = coverFile,
                 Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim(),
-                IsWishlist = _isWishlist
+                IsWishlist = _isWishlist,
+                Genre = string.IsNullOrWhiteSpace(Genre) ? null : Genre.Trim(),
+                Tags = TagUtil.Join(TagChoices.Where(t => t.IsSelected).Select(t => t.Name)),
+                Rating = Rating,
+                MediaCondition = MediaCondition.Length == 0 ? null : MediaCondition,
+                CoverCondition = CoverCondition.Length == 0 ? null : CoverCondition,
+                PurchasePlace = string.IsNullOrWhiteSpace(PurchasePlace) ? null : PurchasePlace.Trim()
             };
 
             if (_original is null)

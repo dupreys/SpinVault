@@ -13,6 +13,9 @@ public partial class AlbumEditWindow : Window
     {
         InitializeComponent();
 
+        // Com os campos novos a janela cresce: nunca passa da área útil da tela (o conteúdo rola).
+        MaxHeight = SystemParameters.WorkArea.Height - 20;
+
         _viewModel = viewModel;
         DataContext = viewModel;
         viewModel.CloseRequested += saved => DialogResult = saved;
@@ -44,6 +47,16 @@ public partial class AlbumEditWindow : Window
 
         e.Handled = true;
         _viewModel.LookupAlbumCommand.Execute(null);
+    }
+
+    /// <summary>Enter no campo "nova lista" cria a lista (em vez de salvar o álbum).</summary>
+    private void OnNewTagKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Enter)
+            return;
+
+        e.Handled = true;
+        _viewModel.AddTagCommand.Execute(null);
     }
 
     /// <summary>Enter no campo do link baixa a imagem (e não aciona o botão Salvar da janela).</summary>

@@ -40,9 +40,35 @@ public partial class CollectionViewModel : ObservableObject
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasSelection))]
     [NotifyPropertyChangedFor(nameof(NoSelection))]
+    [NotifyPropertyChangedFor(nameof(FavoriteLabel))]
     [NotifyCanExecuteChangedFor(nameof(EditCommand))]
     [NotifyCanExecuteChangedFor(nameof(DeleteCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ToggleFavoriteCommand))]
     private Album? selectedAlbum;
+
+    // ----- Filtros por gênero, década e lista (v1.1) -----
+    private string? _genreFilter;
+    private int? _decadeFilter;
+    private string? _tagFilter;
+
+    public ObservableCollection<ChoiceItem> GenreOptions { get; } = new();
+    public ObservableCollection<ChoiceItem> DecadeOptions { get; } = new();
+    public ObservableCollection<ChoiceItem> TagOptions { get; } = new();
+
+    /// <summary>Quantos filtros avançados (gênero, década, lista) estão ligados.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(FilterButtonText))]
+    [NotifyPropertyChangedFor(nameof(HasAdvancedFilters))]
+    private int activeFilterCount;
+
+    [ObservableProperty] private bool hasGenreOptions;
+    [ObservableProperty] private bool hasDecadeOptions;
+    [ObservableProperty] private bool hasTagOptions;
+    [ObservableProperty] private bool hasNoFilterOptions = true;
+
+    public bool HasAdvancedFilters => ActiveFilterCount > 0;
+    public string FilterButtonText => ActiveFilterCount > 0 ? $"⚟  Filtros ({ActiveFilterCount})" : "⚟  Filtros";
+    public string FavoriteLabel => SelectedAlbum?.IsFavorite == true ? "♥  Favorito" : "♡  Favoritar";
 
     [ObservableProperty]
     private string summaryText = "";
@@ -136,6 +162,15 @@ public partial class CollectionViewModel : ObservableObject
         if (FormatFilter is { } format && album.Format != format)
             return false;
 
+        if (_genreFilter is { } genre && !string.Equals(album.Genre?.Trim(), genre, StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        if (_decadeFilter is { } decade && album.Decade != decade)
+            return false;
+
+        if (_tagFilter is { } tag && !album.HasTag(tag))
+            return false;
+
         if (_terms.Length == 0)
             return true;
 
@@ -193,6 +228,8 @@ public partial class CollectionViewModel : ObservableObject
         foreach (var album in _all)
             _searchKeys[album.Id] = Normalize($"{album.Title} {album.Artist}");
 
+        BuildFilterOptions();   // zera filtros que não existem mais (ex.: gênero que ninguém usa)
+
         Albums.Clear();
         foreach (var album in _all)
             if (Matches(album))
@@ -204,6 +241,90 @@ public partial class CollectionViewModel : ObservableObject
         DataChanged?.Invoke();
     }
 
+    /// <summary>Monta as opções de gênero, década e lista a partir do que existe na coleção.</summary>
+    private void BuildFilterOptions()
+    {
+        // Gêneros (sem diferenciar maiúsculas) do mais para o menos frequente.
+        var genres = _all.Where(a => a.HasGenre)
+            .GroupBy(a => a.Genre!.Trim(), StringComparer.OrdinalIgnoreCase)
+            .OrderByDescending(g => g.Count()).ThenBy(g => g.Key, StringComparer.CurrentCultureIgnoreCase)
+            .Select(g => (Key: g.Key, Label: $"{g.Key}  ({g.Count()})")).ToList();
+        if (_genreFilter is not null && !genres.Any(g => g.Key.Equals(_genreFilter, StringComparison.OrdinalIgnoreCase)))
+            _genreFilter = null;
+        FillOptions(GenreOptions, genres, _genreFilter, key => { _genreFilter = key.Length == 0 ? null : key; OnAdvancedFilterChanged(); });
+
+        var decades = _all.Where(a => a.Decade.HasValue)
+            .GroupBy(a => a.Decade!.Value).OrderBy(g => g.Key)
+            .Select(g => (Key: g.Key.ToString(), Label: $"{Decades.Label(g.Key)}  ({g.Count()})")).ToList();
+        if (_decadeFilter is not null && !decades.Any(d => d.Key == _decadeFilter.ToString()))
+            _decadeFilter = null;
+        FillOptions(DecadeOptions, decades, _decadeFilter?.ToString(),
+            key => { _decadeFilter = key.Length == 0 ? null : int.Parse(key); OnAdvancedFilterChanged(); });
+
+        var counts = new Dictionary<string, (string Name, int Count)>(StringComparer.OrdinalIgnoreCase);
+        foreach (var album in _all)
+            foreach (var tag in album.TagList)
+                counts[tag] = counts.TryGetValue(tag, out var c) ? (c.Name, c.Count + 1) : (tag, 1);
+        var tags = counts.Values
+            .OrderBy(t => Array.FindIndex(TagUtil.Defaults, d => d.Equals(t.Name, StringComparison.OrdinalIgnoreCase)) is var i && i >= 0 ? i : 99)
+            .ThenByDescending(t => t.Count).ThenBy(t => t.Name, StringComparer.CurrentCultureIgnoreCase)
+            .Select(t => (Key: t.Name, Label: $"{t.Name}  ({t.Count})")).ToList();
+        if (_tagFilter is not null && !tags.Any(t => t.Key.Equals(_tagFilter, StringComparison.OrdinalIgnoreCase)))
+            _tagFilter = null;
+        FillOptions(TagOptions, tags, _tagFilter, key => { _tagFilter = key.Length == 0 ? null : key; OnAdvancedFilterChanged(); });
+
+        HasGenreOptions = GenreOptions.Count > 0;
+        HasDecadeOptions = DecadeOptions.Count > 0;
+        HasTagOptions = TagOptions.Count > 0;
+        HasNoFilterOptions = !(HasGenreOptions || HasDecadeOptions || HasTagOptions);
+
+        ActiveFilterCount = (_genreFilter is null ? 0 : 1) + (_decadeFilter is null ? 0 : 1) + (_tagFilter is null ? 0 : 1);
+    }
+
+    private static void FillOptions(ObservableCollection<ChoiceItem> target, List<(string Key, string Label)> items,
+                                    string? selectedKey, Action<string> onChosen)
+    {
+        target.Clear();
+        if (items.Count == 0)
+            return;
+
+        var all = new ChoiceItem("", "Todos") { IsSelected = selectedKey is null };
+        all.Chosen += c => onChosen(c.Key);
+        target.Add(all);
+
+        foreach (var (key, label) in items)
+        {
+            var option = new ChoiceItem(key, label) { IsSelected = key.Equals(selectedKey, StringComparison.OrdinalIgnoreCase) };
+            option.Chosen += c => onChosen(c.Key);
+            target.Add(option);
+        }
+    }
+
+    private void OnAdvancedFilterChanged()
+    {
+        ActiveFilterCount = (_genreFilter is null ? 0 : 1) + (_decadeFilter is null ? 0 : 1) + (_tagFilter is null ? 0 : 1);
+        RefreshView();
+    }
+
+    /// <summary>Liga/desliga a lista "Favoritos" do álbum selecionado (o coração).</summary>
+    [RelayCommand(CanExecute = nameof(HasSelection))]
+    private void ToggleFavorite()
+    {
+        if (SelectedAlbum is not { } album)
+            return;
+
+        var tags = album.TagList.ToList();
+        var existing = tags.FindIndex(t => t.Equals(TagUtil.Favorites, StringComparison.OrdinalIgnoreCase));
+        if (existing >= 0)
+            tags.RemoveAt(existing);
+        else
+            tags.Add(TagUtil.Favorites);
+
+        album.Tags = TagUtil.Join(tags);
+        _repository.Update(album);
+        Reload(album.Id);
+    }
+
     [RelayCommand]
     private void SetFilter(string? key) => FilterKey = key ?? "all";
 
@@ -212,6 +333,20 @@ public partial class CollectionViewModel : ObservableObject
     {
         SearchText = "";
         FilterKey = "all";
+        ClearAdvancedFilters();
+    }
+
+    /// <summary>Volta gênero, década e lista para "Todos".</summary>
+    [RelayCommand]
+    private void ClearAdvancedFilters()
+    {
+        _genreFilter = null;
+        _decadeFilter = null;
+        _tagFilter = null;
+        foreach (var options in new[] { GenreOptions, DecadeOptions, TagOptions })
+            for (var i = options.Count - 1; i >= 0; i--)
+                options[i].IsSelected = i == 0;   // só "Todos" fica marcado
+        OnAdvancedFilterChanged();
     }
 
     [RelayCommand]
@@ -382,14 +517,16 @@ public partial class CollectionViewModel : ObservableObject
     [RelayCommand]
     private async Task ImportAsync()
     {
-        var file = Dialogs.PickExcelFile();
+        var file = Dialogs.PickImportFile();
         if (file is null)
             return;
 
         try
         {
             var warnings = new List<string>();
-            var parsed = await Task.Run(() => new ExcelImporter().Read(file, warnings));
+            var isCsv = string.Equals(Path.GetExtension(file), ".csv", StringComparison.OrdinalIgnoreCase);
+            var csv = new CsvImporter();
+            var parsed = await Task.Run(() => isCsv ? csv.Read(file, warnings) : new ExcelImporter().Read(file, warnings));
 
             // Não duplica o que já está no banco (permite importar a mesma planilha duas vezes).
             var existing = _repository.GetAll()
@@ -400,7 +537,9 @@ public partial class CollectionViewModel : ObservableObject
             _repository.AddRange(toAdd);
             Reload();
 
-            var message = $"{toAdd.Count} itens importados.";
+            var message = isCsv && csv.LastKind == CsvImporter.CsvKind.Discogs
+                ? $"Arquivo do Discogs reconhecido.\n{toAdd.Count} itens importados."
+                : $"{toAdd.Count} itens importados.";
             if (parsed.Count - toAdd.Count > 0)
                 message += $"\n{parsed.Count - toAdd.Count} já existiam e foram ignorados.";
             if (warnings.Count > 0)

@@ -8,13 +8,15 @@
     <UseWPF>true</UseWPF>
     <RootNamespace>ColecaoMidias</RootNamespace>
     <AssemblyName>SpinVault</AssemblyName>
-    <Version>1.0.0</Version>
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>1.0.0.0</FileVersion>
+    <Version>1.1.0</Version>
+    <AssemblyVersion>1.1.0.0</AssemblyVersion>
+    <FileVersion>1.1.0.0</FileVersion>
     <Product>SpinVault</Product>
     <AssemblyTitle>SpinVault - Coleção de Mídias</AssemblyTitle>
     <Description>Catálogo de CDs, discos de vinil e fitas cassete</Description>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+    <!-- Repositório consultado pelo aviso de atualização ("dono/repo"). O GitHub Actions preenche sozinho. -->
+    <UpdateRepository></UpdateRepository>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,6 +25,11 @@
     <Using Include="System.Threading" />
     <Using Include="System.Threading.Tasks" />
     <Using Include="System.Net.Http" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Grava o repositório no programa, para ele saber onde procurar versões novas -->
+    <AssemblyMetadata Include="UpdateRepository" Value="$(UpdateRepository)" />
   </ItemGroup>
 
   <ItemGroup>

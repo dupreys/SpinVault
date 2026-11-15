@@ -47,7 +47,7 @@ public sealed class AlbumLookupService : IDisposable
     private static HttpClient CreateClient()
     {
         var client = new HttpClient { Timeout = TimeSpan.FromSeconds(25) };
-        client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("ColecaoMidias", "1.0"));
+        client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("SpinVault", "1.1"));
         client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("(catalogo-pessoal-de-midias)"));
         return client;
     }

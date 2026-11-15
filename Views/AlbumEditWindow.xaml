@@ -8,7 +8,20 @@
         Background="{DynamicResource WindowBackgroundBrush}"
         Foreground="{DynamicResource TextPrimaryBrush}"
         FontFamily="{StaticResource AppFont}" FontSize="13">
-    <Grid Margin="28">
+    <DockPanel Margin="28" LastChildFill="True">
+        <!-- Rodapé fixo: erro e botões ficam sempre visíveis, mesmo com a janela rolando -->
+        <StackPanel DockPanel.Dock="Bottom">
+            <TextBlock Margin="0,10,0,0" TextWrapping="Wrap" MinHeight="18"
+                       Foreground="{DynamicResource ErrorBrush}" Text="{Binding ErrorMessage}" />
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+                <Button Content="Cancelar" Style="{StaticResource GhostButton}" Margin="0,0,8,0" IsCancel="True" />
+                <Button Content="Salvar" Style="{StaticResource PrimaryButton}" Padding="26,9" IsDefault="True"
+                        Command="{Binding SaveCommand}" />
+            </StackPanel>
+        </StackPanel>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <Grid Margin="0,0,8,0">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="268" />
             <ColumnDefinition Width="*" />
@@ -109,19 +122,131 @@
                 </StackPanel>
             </Grid>
 
+            <!-- ===== Gênero e listas ===== -->
+            <TextBlock Style="{StaticResource FieldLabel}" Text="Gênero" />
+            <TextBox Text="{Binding Genre, UpdateSourceTrigger=PropertyChanged}"
+                     ToolTip="Ex.: Rock, MPB, Jazz… ou escolha uma sugestão abaixo" />
+            <ItemsControl Margin="-2,6,0,10" ItemsSource="{Binding GenreSuggestions}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Button Style="{StaticResource GhostButton}" Padding="9,3" FontSize="12" Margin="0,0,2,2"
+                                Content="{Binding}" CommandParameter="{Binding}"
+                                Command="{Binding DataContext.PickGenreCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <TextBlock Style="{StaticResource FieldLabel}" Text="Listas" />
+            <ItemsControl ItemsSource="{Binding TagChoices}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <ToggleButton Style="{StaticResource ChipToggle}" Margin="0,0,6,6"
+                                      Content="{Binding Name}" IsChecked="{Binding IsSelected, Mode=TwoWay}" />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <Grid Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBox x:Name="NewTagBox" Grid.Column="0" Padding="9,7" FontSize="12"
+                         ToolTip="Digite o nome de uma lista nova (ex.: Jantar, Viagem) e aperte Enter"
+                         Text="{Binding NewTagText, UpdateSourceTrigger=PropertyChanged}"
+                         PreviewKeyDown="OnNewTagKeyDown" />
+                <Button Grid.Column="1" Margin="6,0,0,0" Padding="12,7" Content="+  Criar lista"
+                        Command="{Binding AddTagCommand}" />
+            </Grid>
+
+            <!-- ===== Nota, local e conservação (só para o que já foi comprado) ===== -->
+            <StackPanel Visibility="{Binding ShowCollectionFields, Converter={StaticResource BoolToVisibility}}">
+                <Grid Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Margin="0,0,20,0">
+                        <TextBlock Style="{StaticResource FieldLabel}" Text="Minha nota" />
+                        <ItemsControl ItemsSource="{Binding Stars}"
+                                      ToolTip="Clique numa estrela para dar a nota; clique de novo para tirar">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Style="{StaticResource StarButton}" Content="{Binding Glyph}"
+                                            CommandParameter="{Binding Number}"
+                                            Command="{Binding DataContext.SetRatingCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1">
+                        <TextBlock Style="{StaticResource FieldLabel}" Text="Onde comprou" />
+                        <TextBox ToolTip="Loja, feira, site, presente…"
+                                 Text="{Binding PurchasePlace, UpdateSourceTrigger=PropertyChanged}" />
+                    </StackPanel>
+                </Grid>
+
+                <Grid>
+                    <TextBlock Style="{StaticResource FieldLabel}" Text="Conservação do disco / fita / CD" />
+                    <TextBlock HorizontalAlignment="Right" FontSize="12" Foreground="{DynamicResource AccentBrush}"
+                               Text="{Binding MediaConditionLabel}" />
+                </Grid>
+                <ItemsControl Margin="0,0,0,8" ItemsSource="{Binding MediaConditions}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <RadioButton Style="{StaticResource MiniChip}" GroupName="MediaCondition" Margin="0,0,5,5"
+                                         Content="{Binding Label}" ToolTip="{Binding ToolTip}"
+                                         IsChecked="{Binding IsSelected, Mode=TwoWay}" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <Grid>
+                    <TextBlock Style="{StaticResource FieldLabel}" Text="Conservação da capa / encarte" />
+                    <TextBlock HorizontalAlignment="Right" FontSize="12" Foreground="{DynamicResource AccentBrush}"
+                               Text="{Binding CoverConditionLabel}" />
+                </Grid>
+                <ItemsControl Margin="0,0,0,12" ItemsSource="{Binding CoverConditions}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <RadioButton Style="{StaticResource MiniChip}" GroupName="CoverCondition" Margin="0,0,5,5"
+                                         Content="{Binding Label}" ToolTip="{Binding ToolTip}"
+                                         IsChecked="{Binding IsSelected, Mode=TwoWay}" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
             <TextBlock Style="{StaticResource FieldLabel}" Text="Observações" />
-            <TextBox Height="76" AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top"
+            <TextBox Height="70" AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top"
                      VerticalScrollBarVisibility="Auto"
                      Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}" />
-
-            <TextBlock Margin="0,10,0,0" TextWrapping="Wrap" MinHeight="18"
-                       Foreground="{DynamicResource ErrorBrush}" Text="{Binding ErrorMessage}" />
-
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
-                <Button Content="Cancelar" Style="{StaticResource GhostButton}" Margin="0,0,8,0" IsCancel="True" />
-                <Button Content="Salvar" Style="{StaticResource PrimaryButton}" Padding="26,9" IsDefault="True"
-                        Command="{Binding SaveCommand}" />
-            </StackPanel>
         </StackPanel>
     </Grid>
+        </ScrollViewer>
+    </DockPanel>
 </Window>

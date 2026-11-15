@@ -6,6 +6,7 @@ namespace ColecaoMidias.Services;
 /// <summary>
 /// Lê a aba "Base De Dados" da planilha de coleção:
 /// A Album | B Artista | C Midia | D Lançamento | E Ano de Compra | F Valor (R$)
+/// e, nas planilhas exportadas pela v1.1: G Gênero | H Listas | I Nota | J Conservação (mídia) | K Conservação (capa) | L Local | M Observações
 /// (cabeçalho na linha 2, dados a partir da linha 3).
 /// </summary>
 public sealed class ExcelImporter
@@ -58,7 +59,16 @@ public sealed class ExcelImporter
                 Format = format,
                 ReleaseDate = ReadDate(row.Get("D")),
                 PurchaseYear = ReadYear(row.Get("E")),
-                Price = ReadPrice(row.Get("F"))
+                Price = ReadPrice(row.Get("F")),
+
+                // Colunas G a M existem nas planilhas exportadas pela v1.1; nas antigas ficam vazias.
+                Genre = NullIfEmpty(row.Get("G")),
+                Tags = TagUtil.Join(TagUtil.Split(row.Get("H"))),
+                Rating = ReadRating(row.Get("I")),
+                MediaCondition = Conditions.Parse(row.Get("J")),
+                CoverCondition = Conditions.Parse(row.Get("K")),
+                PurchasePlace = NullIfEmpty(row.Get("L")),
+                Notes = NullIfEmpty(row.Get("M"))
             });
         }
 
@@ -83,6 +93,11 @@ public sealed class ExcelImporter
         // Ex.: a célula de "Relayer" está como texto "29/11/1974"
         return Fmt.TryParseDate(text, out var date) ? date : null;
     }
+
+    private static string? NullIfEmpty(string text) => text.Length == 0 ? null : text;
+
+    private static int ReadRating(string text) =>
+        double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var n) ? (int)Math.Clamp(Math.Round(n), 0, 5) : 0;
 
     private static int? ReadYear(string text)
     {

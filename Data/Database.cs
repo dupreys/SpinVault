@@ -54,14 +54,26 @@ public sealed class Database
             """;
         command.ExecuteNonQuery();
 
-        // Bancos criados antes da lista de desejos não têm a coluna IsWishlist: acrescenta sem perder nada.
+        // Bancos de versões anteriores não têm as colunas novas: acrescenta sem perder nada.
+        EnsureColumn(connection, "IsWishlist", "INTEGER NOT NULL DEFAULT 0");   // v1.0 (lista de desejos)
+        EnsureColumn(connection, "Genre", "TEXT NULL");                          // v1.1
+        EnsureColumn(connection, "Tags", "TEXT NULL");
+        EnsureColumn(connection, "Rating", "INTEGER NOT NULL DEFAULT 0");
+        EnsureColumn(connection, "MediaCondition", "TEXT NULL");
+        EnsureColumn(connection, "CoverCondition", "TEXT NULL");
+        EnsureColumn(connection, "PurchasePlace", "TEXT NULL");
+    }
+
+    private static void EnsureColumn(SqliteConnection connection, string name, string definition)
+    {
         using var check = connection.CreateCommand();
-        check.CommandText = "SELECT COUNT(*) FROM pragma_table_info('Albums') WHERE name = 'IsWishlist'";
-        if (Convert.ToInt32(check.ExecuteScalar()) == 0)
-        {
-            using var alter = connection.CreateCommand();
-            alter.CommandText = "ALTER TABLE Albums ADD COLUMN IsWishlist INTEGER NOT NULL DEFAULT 0";
-            alter.ExecuteNonQuery();
-        }
+        check.CommandText = "SELECT COUNT(*) FROM pragma_table_info('Albums') WHERE name = $name";
+        check.Parameters.AddWithValue("$name", name);
+        if (Convert.ToInt32(check.ExecuteScalar()) != 0)
+            return;
+
+        using var alter = connection.CreateCommand();
+        alter.CommandText = $"ALTER TABLE Albums ADD COLUMN {name} {definition}";
+        alter.ExecuteNonQuery();
     }
 }

@@ -12,7 +12,11 @@ namespace ColecaoMidias.Services;
 /// </summary>
 public static class ExportService
 {
-    private static readonly string[] Headers = { "Album", "Artista", "Mídia", "Lançamento", "Ano de Compra", "Valor (R$)" };
+    private static readonly string[] Headers =
+    {
+        "Album", "Artista", "Mídia", "Lançamento", "Ano de Compra", "Valor (R$)",
+        "Gênero", "Listas", "Nota", "Conservação (mídia)", "Conservação (capa)", "Local de compra", "Observações"
+    };
 
     public static void Export(string path, IEnumerable<Album> albums)
     {
@@ -39,7 +43,14 @@ public static class ExportService
                 CsvField(MediaFormatInfo.Label(a.Format)),
                 CsvField(a.ReleaseDate.HasValue ? Fmt.Date(a.ReleaseDate) : ""),
                 CsvField(a.PurchaseYear?.ToString(CultureInfo.InvariantCulture) ?? ""),
-                CsvField(a.Price.ToString("0.00", Fmt.PtBr))
+                CsvField(a.Price.ToString("0.00", Fmt.PtBr)),
+                CsvField(a.Genre ?? ""),
+                CsvField(a.TagsDisplay),
+                CsvField(a.HasRating ? a.Rating.ToString(CultureInfo.InvariantCulture) : ""),
+                CsvField(a.MediaCondition ?? ""),
+                CsvField(a.CoverCondition ?? ""),
+                CsvField(a.PurchasePlace ?? ""),
+                CsvField(a.Notes ?? "")
             }));
         }
         return builder.ToString();
@@ -119,7 +130,7 @@ public static class ExportService
         var sheet = new StringBuilder();
         sheet.Append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>");
         sheet.Append("<worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\">");
-        sheet.Append("<cols><col min=\"1\" max=\"2\" width=\"34\" customWidth=\"1\"/><col min=\"3\" max=\"6\" width=\"16\" customWidth=\"1\"/></cols>");
+        sheet.Append("<cols><col min=\"1\" max=\"2\" width=\"34\" customWidth=\"1\"/><col min=\"3\" max=\"6\" width=\"16\" customWidth=\"1\"/><col min=\"7\" max=\"8\" width=\"22\" customWidth=\"1\"/><col min=\"9\" max=\"11\" width=\"18\" customWidth=\"1\"/><col min=\"12\" max=\"13\" width=\"28\" customWidth=\"1\"/></cols>");
         sheet.Append("<sheetData>");
 
         // Linha 1: título; linha 2: cabeçalho (igual à planilha original).
@@ -142,6 +153,20 @@ public static class ExportService
             if (a.PurchaseYear is { } year)
                 sheet.Append($"<c r=\"E{r}\"><v>{year}</v></c>");
             sheet.Append($"<c r=\"F{r}\" s=\"3\"><v>{a.Price.ToString(CultureInfo.InvariantCulture)}</v></c>");
+            if (a.HasGenre)
+                sheet.Append(Text($"G{r}", a.Genre!));
+            if (a.HasTags)
+                sheet.Append(Text($"H{r}", a.TagsDisplay));
+            if (a.HasRating)
+                sheet.Append($"<c r=\"I{r}\"><v>{a.Rating}</v></c>");
+            if (a.HasMediaCondition)
+                sheet.Append(Text($"J{r}", a.MediaCondition!));
+            if (a.HasCoverCondition)
+                sheet.Append(Text($"K{r}", a.CoverCondition!));
+            if (a.HasPlace)
+                sheet.Append(Text($"L{r}", a.PurchasePlace!));
+            if (a.HasNotes)
+                sheet.Append(Text($"M{r}", a.Notes!));
             sheet.Append("</row>");
         }
 
