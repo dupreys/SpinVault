@@ -79,6 +79,14 @@ O SpinVault fala **Português (Brasil)** e **English**.
 - O idioma muda os textos do app, as datas (25/12/2026 em português, 12/25/2026 em inglês), os valores (R$ 1.234,56 ou R$ 1,234.56), os relatórios em PDF e a imagem de compartilhar, além dos cabeçalhos dos arquivos exportados.
 - A coleção não é afetada: você pode trocar de idioma quando quiser. Planilhas e CSV exportados em um idioma podem ser importados no outro, e as datas dos dois formatos são reconhecidas.
 
+## Android
+
+Há também uma versão para **Android** (.NET MAUI), na pasta [`Android/`](Android). Ela compartilha com o app do Windows o formato do banco e do backup, então uma coleção pode ser levada de um para o outro.
+
+- **Baixar:** na página de [Releases](https://github.com/dupreys/SpinVault/releases), procure a versão `android-v...` e baixe o arquivo `.apk`. Abra no celular e permita instalar apps de fontes desconhecidas.
+- **Nuvem opcional:** o app Android pode entrar com a conta Google e guardar um backup na pasta oculta do seu Drive, restaurando a coleção em outro aparelho.
+- Mais detalhes em [`Android/README.md`](Android/README.md). Política de privacidade e termos: [site do projeto](https://dupreys.github.io/SpinVault/).
+
 ## Licença
 
 Defina a licença antes de tornar o repositório público (por exemplo MIT). Sem licença, o código fica com todos os direitos reservados ao autor.

@@ -18,3 +18,8 @@ Thumbs.db
 .DS_Store
 desktop.ini
 dist/
+*.keystore
+*.jks
+*.apk
+Android/bin/
+Android/obj/
