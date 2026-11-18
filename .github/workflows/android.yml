@@ -2,7 +2,7 @@ name: Gerar APK do Android
 
 on:
   push:
-    tags: ["v*"]
+    tags: ["android-v*"]
   workflow_dispatch:
 
 permissions:
@@ -28,7 +28,7 @@ jobs:
 
       - name: Definir versão
         run: |
-          if [ "${{ github.ref_type }}" = "tag" ]; then V="${{ github.ref_name }}"; V="${V#v}"; else V="0.0.0"; fi
+          if [ "${{ github.ref_type }}" = "tag" ]; then V="${{ github.ref_name }}"; V="${V#android-v}"; else V="0.0.0"; fi
           echo "VERSION=${V%%-*}" >> "$GITHUB_ENV"
 
       # O APK precisa estar assinado para instalar. Se você definir os segredos ANDROID_KEYSTORE_BASE64,
@@ -51,11 +51,11 @@ jobs:
 
       - name: Gerar APK
         run: >
-          dotnet publish SpinVault.Android.csproj -c Release -f net10.0-android
+          dotnet publish Android/SpinVault.Android.csproj -c Release -f net10.0-android
           -p:ApplicationDisplayVersion=$VERSION -p:ApplicationVersion=${{ github.run_number }}
           -p:AndroidKeyStore=true -p:AndroidSigningKeyStore=$PWD/spinvault.keystore
           -p:AndroidSigningKeyAlias=$KS_ALIAS -p:AndroidSigningKeyPass=env:KS_PASS
-          -p:AndroidSigningStorePass=env:KS_PASS -o apk
+          -p:AndroidSigningStorePass=env:KS_PASS -p:PublishTrimmed=false -p:RunAOTCompilation=false -o apk
 
       - name: Renomear APK
         run: |

@@ -20,6 +20,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- O app Android (MAUI) fica na pasta Android/ e tem o próprio projeto: o WPF não pode compilá-lo -->
+    <Compile Remove="Android\**" />
+    <EmbeddedResource Remove="Android\**" />
+    <Page Remove="Android\**" />
+    <None Remove="Android\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- WPF não importa estes namespaces automaticamente -->
     <Using Include="System.IO" />
     <Using Include="System.Threading" />
