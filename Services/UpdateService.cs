@@ -56,16 +56,16 @@ public sealed class UpdateService : IDisposable
     public async Task<UpdateCheckResult> CheckAsync(CancellationToken ct = default)
     {
         if (!IsConfigured)
-            return new UpdateCheckResult(null, "A verificação de atualização ainda não foi configurada neste programa (repositório do GitHub não informado).", "not-configured");
+            return new UpdateCheckResult(null, Loc.T("A verificação de atualização ainda não foi configurada neste programa (repositório do GitHub não informado)."), "not-configured");
 
         try
         {
             using var response = await _http.GetAsync($"https://api.github.com/repos/{Repository}/releases/latest", ct);
 
             if (response.StatusCode == HttpStatusCode.NotFound)
-                return new UpdateCheckResult(null, "Nenhuma versão foi publicada ainda no GitHub.");
+                return new UpdateCheckResult(null, Loc.T("Nenhuma versão foi publicada ainda no GitHub."));
             if (response.StatusCode is HttpStatusCode.Forbidden or HttpStatusCode.TooManyRequests)
-                return new UpdateCheckResult(null, "O GitHub limitou as consultas por enquanto. Tente de novo mais tarde.", "rate-limit");
+                return new UpdateCheckResult(null, Loc.T("O GitHub limitou as consultas por enquanto. Tente de novo mais tarde."), "rate-limit");
             response.EnsureSuccessStatusCode();
 
             await using var stream = await response.Content.ReadAsStreamAsync(ct);
@@ -74,10 +74,10 @@ public sealed class UpdateService : IDisposable
 
             var tag = Text(root, "tag_name");
             if (!TryParseVersion(tag, out var latest))
-                return new UpdateCheckResult(null, $"Não entendi o número da última versão (\"{tag}\").", "bad-version");
+                return new UpdateCheckResult(null, Loc.F("Não entendi o número da última versão (\"{0}\").", tag), "bad-version");
 
             if (latest <= Normalize(Current))
-                return new UpdateCheckResult(null, $"Você está com a versão mais recente ({Format(Current)}).");
+                return new UpdateCheckResult(null, Loc.F("Você está com a versão mais recente ({0}).", Format(Current)));
 
             string? download = null;
             if (root.TryGetProperty("assets", out var assets) && assets.ValueKind == JsonValueKind.Array)
@@ -94,7 +94,7 @@ public sealed class UpdateService : IDisposable
             }
 
             var info = new UpdateInfo(Format(latest), tag, Text(root, "html_url"), download is { Length: > 0 } ? download : null, Text(root, "body"));
-            return new UpdateCheckResult(info, $"Nova versão disponível: {info.Version} (você tem {Format(Current)}).");
+            return new UpdateCheckResult(info, Loc.F("Nova versão disponível: {0} (você tem {1}).", info.Version, Format(Current)));
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -102,7 +102,7 @@ public sealed class UpdateService : IDisposable
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException)
         {
-            return new UpdateCheckResult(null, "Não consegui consultar o GitHub (sem internet?).", ex.Message);
+            return new UpdateCheckResult(null, Loc.T("Não consegui consultar o GitHub (sem internet?)."), ex.Message);
         }
     }
 

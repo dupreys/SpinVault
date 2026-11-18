@@ -1,6 +1,7 @@
 <UserControl x:Class="ColecaoMidias.Views.CollectionView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:l="clr-namespace:ColecaoMidias.Services"
              Foreground="{DynamicResource TextPrimaryBrush}">
 
     <Grid>
@@ -11,37 +12,53 @@
         </Grid.RowDefinitions>
 
         <!-- Cabeçalho da página -->
-        <DockPanel Grid.Row="0" Margin="0,0,0,20" LastChildFill="False">
-            <StackPanel DockPanel.Dock="Left">
-                <TextBlock Text="Coleção" FontSize="32" FontWeight="Bold" />
+        <Grid x:Name="HeaderGrid" Grid.Row="0" Margin="0,0,0,14">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <StackPanel Grid.Column="0" Margin="0,0,16,0">
+                <TextBlock Text="{l:Tr 'Coleção'}" FontSize="32" FontWeight="Bold" />
                 <TextBlock Margin="0,2,0,10" Text="{Binding SummaryText}" FontSize="13"
                            Foreground="{DynamicResource TextSecondaryBrush}" />
-                <StackPanel Orientation="Horizontal">
+                <WrapPanel Orientation="Horizontal">
                     <Border Style="{StaticResource StatPill}">
                         <StackPanel Orientation="Horizontal">
                             <Ellipse Width="8" Height="8" Margin="0,0,7,0" Fill="{DynamicResource VinylBrush}" />
                             <TextBlock FontWeight="Bold" Text="{Binding VinylCount}" Margin="0,0,5,0" />
-                            <TextBlock Foreground="{DynamicResource TextSecondaryBrush}" Text="vinis" />
+                            <TextBlock Foreground="{DynamicResource TextSecondaryBrush}" Text="{l:Tr 'vinis'}" />
                         </StackPanel>
                     </Border>
                     <Border Style="{StaticResource StatPill}">
                         <StackPanel Orientation="Horizontal">
                             <Ellipse Width="8" Height="8" Margin="0,0,7,0" Fill="{DynamicResource CdBrush}" />
                             <TextBlock FontWeight="Bold" Text="{Binding CdCount}" Margin="0,0,5,0" />
-                            <TextBlock Foreground="{DynamicResource TextSecondaryBrush}" Text="CDs" />
+                            <TextBlock Foreground="{DynamicResource TextSecondaryBrush}" Text="{l:Tr 'CDs'}" />
                         </StackPanel>
                     </Border>
                     <Border Style="{StaticResource StatPill}">
                         <StackPanel Orientation="Horizontal">
                             <Ellipse Width="8" Height="8" Margin="0,0,7,0" Fill="{DynamicResource CassetteBrush}" />
                             <TextBlock FontWeight="Bold" Text="{Binding CassetteCount}" Margin="0,0,5,0" />
-                            <TextBlock Foreground="{DynamicResource TextSecondaryBrush}" Text="fitas" />
+                            <TextBlock Foreground="{DynamicResource TextSecondaryBrush}" Text="{l:Tr 'fitas'}" />
                         </StackPanel>
                     </Border>
-                </StackPanel>
+                    <Border Style="{StaticResource StatPill}" ToolTip="{l:Tr 'Discos que estão emprestados agora'}"
+                            Visibility="{Binding HasLoaned, Converter={StaticResource BoolToVisibility}}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="⇄" FontWeight="Bold" Margin="0,0,7,0" Foreground="{DynamicResource AccentBrush}" />
+                            <TextBlock FontWeight="Bold" Text="{Binding LoanedCount}" Margin="0,0,5,0" />
+                            <TextBlock Foreground="{DynamicResource TextSecondaryBrush}" Text="{l:Tr 'emprestados'}" />
+                        </StackPanel>
+                    </Border>
+                </WrapPanel>
             </StackPanel>
-            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                <Button x:Name="ToolsButton" Style="{StaticResource GhostButton}" Content="⋯  Ferramentas" Margin="0,0,8,0"
+            <StackPanel x:Name="HeaderActions" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button x:Name="ToolsButton" Style="{StaticResource GhostButton}" Content="{l:Tr '⋯  Ferramentas'}" Margin="0,0,8,0"
                         Click="OnToolsClick" />
                 <Popup x:Name="ToolsPopup" PlacementTarget="{Binding ElementName=ToolsButton}" Placement="Bottom"
                        StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade" HorizontalOffset="0" VerticalOffset="6">
@@ -52,74 +69,105 @@
                             <DropShadowEffect BlurRadius="14" ShadowDepth="3" Opacity="0.35" />
                         </Border.Effect>
                         <StackPanel>
-                            <Button Style="{StaticResource GhostButton}" HorizontalContentAlignment="Left" Content="▣  Baixar capas"
-                                    ToolTip="Busca na internet a capa dos álbuns que ainda não têm"
+                            <Button Style="{StaticResource GhostButton}" HorizontalContentAlignment="Left" Content="{l:Tr '▣  Baixar capas'}"
+                                    ToolTip="{l:Tr 'Busca na internet a capa dos álbuns que ainda não têm'}"
                                     Command="{Binding DownloadCoversCommand}" Click="OnToolsItemClick" />
-                            <Button Style="{StaticResource GhostButton}" HorizontalContentAlignment="Left" Content="⌕  Completar datas de lançamento"
-                                    ToolTip="Busca na internet o lançamento dos álbuns que estão sem data"
+                            <Button Style="{StaticResource GhostButton}" HorizontalContentAlignment="Left" Content="{l:Tr '⌕  Completar datas de lançamento'}"
+                                    ToolTip="{l:Tr 'Busca na internet o lançamento dos álbuns que estão sem data'}"
                                     Command="{Binding CompleteDataCommand}" Click="OnToolsItemClick" />
-                            <Button Style="{StaticResource GhostButton}" HorizontalContentAlignment="Left" Content="⧉  Ver álbuns repetidos"
-                                    ToolTip="Mostra álbuns cadastrados mais de uma vez, mesmo em mídias diferentes"
+                            <Button Style="{StaticResource GhostButton}" HorizontalContentAlignment="Left" Content="{l:Tr '⧉  Ver álbuns repetidos'}"
+                                    ToolTip="{l:Tr 'Mostra álbuns cadastrados mais de uma vez, mesmo em mídias diferentes'}"
                                     Command="{Binding FindDuplicatesCommand}" Click="OnToolsItemClick" />
                             <Border Height="1" Margin="6,4" Background="{DynamicResource LineBrush}" />
-                            <Button Style="{StaticResource GhostButton}" HorizontalContentAlignment="Left" Content="⭳  Importar (Excel, CSV ou Discogs)"
-                                    ToolTip="Planilha do Excel, CSV do app ou o CSV exportado do Discogs"
+                            <Button Style="{StaticResource GhostButton}" HorizontalContentAlignment="Left" Content="{l:Tr '⭳  Importar (Excel, CSV ou Discogs)'}"
+                                    ToolTip="{l:Tr 'Planilha do Excel, CSV do app ou o CSV exportado do Discogs'}"
                                     Command="{Binding ImportCommand}" Click="OnToolsItemClick" />
-                            <Button Style="{StaticResource GhostButton}" HorizontalContentAlignment="Left" Content="⭱  Exportar (Excel ou CSV)"
+                            <Button Style="{StaticResource GhostButton}" HorizontalContentAlignment="Left" Content="{l:Tr '⭱  Exportar (Excel ou CSV)'}"
                                     Command="{Binding ExportCommand}" Click="OnToolsItemClick" />
                             <Border Height="1" Margin="6,4" Background="{DynamicResource LineBrush}" />
-                            <Button Style="{StaticResource GhostButton}" HorizontalContentAlignment="Left" Content="⛁  Criar backup"
-                                    ToolTip="Salva o banco e todas as capas em um arquivo .zip"
+                            <Button Style="{StaticResource GhostButton}" HorizontalContentAlignment="Left" Content="{l:Tr '⛁  Criar backup'}"
+                                    ToolTip="{l:Tr 'Salva o banco e todas as capas em um arquivo .zip'}"
                                     Command="{Binding CreateBackupCommand}" Click="OnToolsItemClick" />
-                            <Button Style="{StaticResource GhostButton}" HorizontalContentAlignment="Left" Content="↺  Restaurar backup"
+                            <Button Style="{StaticResource GhostButton}" HorizontalContentAlignment="Left" Content="{l:Tr '↺  Restaurar backup'}"
                                     Command="{Binding RestoreBackupCommand}" Click="OnToolsItemClick" />
                         </StackPanel>
                     </Border>
                 </Popup>
-                <Button Style="{StaticResource PrimaryButton}" Content="+  Adicionar álbum"
+                <Button Style="{StaticResource PrimaryButton}" Content="{l:Tr '+  Adicionar álbum'}"
                         Command="{Binding AddCommand}" />
             </StackPanel>
-        </DockPanel>
+        </Grid>
 
         <!-- Busca, filtros e modo de exibição -->
-        <Grid Grid.Row="1" Margin="0,0,0,8"
-              Visibility="{Binding HasItems, Converter={StaticResource BoolToVisibility}}">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-
-            <Grid Grid.Column="0" Width="300" VerticalAlignment="Center">
+        <WrapPanel Grid.Row="1" Margin="0,0,0,4"
+                   Visibility="{Binding HasItems, Converter={StaticResource BoolToVisibility}}">
+            <Grid x:Name="SearchHost" Width="250" Margin="0,0,12,8" VerticalAlignment="Center">
                 <!-- Delay: espera o usuário parar de digitar por 250 ms antes de filtrar -->
                 <TextBox x:Name="SearchBox" Padding="40,10,12,10"
                          Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged, Delay=250}" />
                 <TextBlock Text="⌕" FontSize="17" Margin="13,0,0,2" HorizontalAlignment="Left" VerticalAlignment="Center"
                            IsHitTestVisible="False" Foreground="{DynamicResource TextMutedBrush}" />
-                <TextBlock Text="Buscar álbum ou artista…" Margin="41,0,0,0" VerticalAlignment="Center"
+                <TextBlock Text="{l:Tr 'Buscar álbum ou artista…'}" Margin="41,0,0,0" VerticalAlignment="Center"
                            IsHitTestVisible="False" Foreground="{DynamicResource TextMutedBrush}"
                            Visibility="{Binding Text, ElementName=SearchBox, Converter={StaticResource EmptyToVisible}}" />
             </Grid>
 
-            <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="18,0,0,0" VerticalAlignment="Center">
-                <RadioButton Style="{StaticResource ChipRadio}" GroupName="Filter" Content="Todos" Margin="0,0,8,0"
+            <StackPanel Orientation="Horizontal" Margin="0,0,12,8" VerticalAlignment="Center">
+                <RadioButton Style="{StaticResource ChipRadio}" GroupName="Filter" Content="{l:Tr 'Todos'}" Margin="0,0,8,0"
                              IsChecked="{Binding FilterKey, Converter={StaticResource KeyMatch}, ConverterParameter=all}" />
-                <RadioButton Style="{StaticResource ChipRadio}" GroupName="Filter" Content="♫  Vinil" Margin="0,0,8,0"
+                <RadioButton Style="{StaticResource ChipRadio}" GroupName="Filter" Content="{l:Tr '♫  Vinil'}" Margin="0,0,8,0"
                              IsChecked="{Binding FilterKey, Converter={StaticResource KeyMatch}, ConverterParameter=vinyl}" />
-                <RadioButton Style="{StaticResource ChipRadio}" GroupName="Filter" Content="◉  CD" Margin="0,0,8,0"
+                <RadioButton Style="{StaticResource ChipRadio}" GroupName="Filter" Content="{l:Tr '◉  CD'}" Margin="0,0,8,0"
                              IsChecked="{Binding FilterKey, Converter={StaticResource KeyMatch}, ConverterParameter=cd}" />
-                <RadioButton Style="{StaticResource ChipRadio}" GroupName="Filter" Content="▤  Cassete"
+                <RadioButton Style="{StaticResource ChipRadio}" GroupName="Filter" Content="{l:Tr '▤  Cassete'}"
                              IsChecked="{Binding FilterKey, Converter={StaticResource KeyMatch}, ConverterParameter=cassette}" />
             </StackPanel>
 
-            <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Left" Margin="12,0,0,0" VerticalAlignment="Center">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,0,12,8" VerticalAlignment="Center">
                 <Button x:Name="FilterButton" Style="{StaticResource GhostButton}" Content="{Binding FilterButtonText}"
-                        ToolTip="Filtrar por gênero, década ou lista (Favoritos, Para ouvir…)" Click="OnFilterClick" />
-                <Button Style="{StaticResource GhostButton}" Content="✕  Limpar" Padding="10,8"
-                        ToolTip="Tira os filtros de gênero, década e lista"
+                        ToolTip="{l:Tr 'Filtrar por gênero, década, lista (Favoritos, Para ouvir…) ou emprestados'}" Click="OnFilterClick" />
+                <Button Style="{StaticResource GhostButton}" Content="{l:Tr '✕  Limpar'}" Padding="10,8"
+                        ToolTip="{l:Tr 'Tira os filtros de gênero, década, lista e empréstimos'}"
                         Command="{Binding ClearAdvancedFiltersCommand}"
                         Visibility="{Binding HasAdvancedFilters, Converter={StaticResource BoolToVisibility}}" />
+                <Button x:Name="OrderButton" Style="{StaticResource GhostButton}" Content="{Binding OrderButtonText}" Margin="8,0,0,0"
+                        ToolTip="{Binding OrderSummary}" Click="OnOrderClick" />
+                <Popup x:Name="OrderPopup" PlacementTarget="{Binding ElementName=OrderButton}" Placement="Bottom"
+                       StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade" VerticalOffset="6">
+                    <Border Margin="0,0,14,14" Padding="16" CornerRadius="14" Width="400"
+                            Background="{DynamicResource SurfaceBrush}"
+                            BorderBrush="{DynamicResource LineBrush}" BorderThickness="1">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="14" ShadowDepth="3" Opacity="0.35" />
+                        </Border.Effect>
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="{l:Tr 'Ordenar por'}" />
+                            <ItemsControl Margin="0,0,0,12" ItemsSource="{Binding SortChoices}">
+                                <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <RadioButton Style="{StaticResource MiniChip}" GroupName="SortChoice" Margin="0,0,5,5"
+                                                     Content="{Binding Label}" IsChecked="{Binding IsSelected, Mode=TwoWay}" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="{l:Tr 'Agrupar por'}" />
+                            <ItemsControl Margin="0,0,0,4" ItemsSource="{Binding GroupChoices}">
+                                <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <RadioButton Style="{StaticResource MiniChip}" GroupName="GroupChoice" Margin="0,0,5,5"
+                                                     Content="{Binding Label}" IsChecked="{Binding IsSelected, Mode=TwoWay}" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock FontSize="11" TextWrapping="Wrap" Foreground="{DynamicResource TextMutedBrush}"
+                                       Text="{l:Tr 'Com o agrupamento ligado, a coleção ganha seções com título; a ordem escolhida vale dentro de cada seção.'}" />
+                            <Button Style="{StaticResource GhostButton}" HorizontalAlignment="Left" Margin="0,10,0,0" Padding="10,6"
+                                    Content="{l:Tr '↺  Voltar ao padrão'}" Command="{Binding ResetOrderingCommand}" />
+                        </StackPanel>
+                    </Border>
+                </Popup>
                 <Popup x:Name="FilterPopup" PlacementTarget="{Binding ElementName=FilterButton}" Placement="Bottom"
                        StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade" VerticalOffset="6">
                     <Border Margin="0,0,14,14" Padding="16" CornerRadius="14" Width="400"
@@ -132,10 +180,23 @@
                             <StackPanel>
                                 <TextBlock Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"
                                            Visibility="{Binding HasNoFilterOptions, Converter={StaticResource BoolToVisibility}}"
-                                           Text="Ainda não há gêneros, décadas ou listas. Preencha o gênero e a data de lançamento nos álbuns, ou marque álbuns como favoritos, para filtrar por aqui." />
+                                           Text="{l:Tr 'Ainda não há gêneros, décadas ou listas. Preencha o gênero e a data de lançamento nos álbuns, ou marque álbuns como favoritos, para filtrar por aqui.'}" />
+
+                                <StackPanel Visibility="{Binding HasLoanOptions, Converter={StaticResource BoolToVisibility}}">
+                                    <TextBlock Style="{StaticResource FieldLabel}" Text="{l:Tr 'Empréstimos'}" />
+                                    <ItemsControl Margin="0,0,0,12" ItemsSource="{Binding LoanOptions}">
+                                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <RadioButton Style="{StaticResource MiniChip}" GroupName="FilterLoan" Margin="0,0,5,5"
+                                                             Content="{Binding Label}" IsChecked="{Binding IsSelected, Mode=TwoWay}" />
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
 
                                 <StackPanel Visibility="{Binding HasTagOptions, Converter={StaticResource BoolToVisibility}}">
-                                    <TextBlock Style="{StaticResource FieldLabel}" Text="Lista" />
+                                    <TextBlock Style="{StaticResource FieldLabel}" Text="{l:Tr 'Lista'}" />
                                     <ItemsControl Margin="0,0,0,12" ItemsSource="{Binding TagOptions}">
                                         <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                                         <ItemsControl.ItemTemplate>
@@ -148,7 +209,7 @@
                                 </StackPanel>
 
                                 <StackPanel Visibility="{Binding HasDecadeOptions, Converter={StaticResource BoolToVisibility}}">
-                                    <TextBlock Style="{StaticResource FieldLabel}" Text="Década de lançamento" />
+                                    <TextBlock Style="{StaticResource FieldLabel}" Text="{l:Tr 'Década de lançamento'}" />
                                     <ItemsControl Margin="0,0,0,12" ItemsSource="{Binding DecadeOptions}">
                                         <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                                         <ItemsControl.ItemTemplate>
@@ -161,7 +222,7 @@
                                 </StackPanel>
 
                                 <StackPanel Visibility="{Binding HasGenreOptions, Converter={StaticResource BoolToVisibility}}">
-                                    <TextBlock Style="{StaticResource FieldLabel}" Text="Gênero" />
+                                    <TextBlock Style="{StaticResource FieldLabel}" Text="{l:Tr 'Gênero'}" />
                                     <ItemsControl ItemsSource="{Binding GenreOptions}">
                                         <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                                         <ItemsControl.ItemTemplate>
@@ -178,16 +239,16 @@
                 </Popup>
             </StackPanel>
 
-            <Border Grid.Column="3" Padding="3" CornerRadius="13" VerticalAlignment="Center"
+            <Border Padding="3" CornerRadius="13" VerticalAlignment="Center" Margin="0,0,0,8"
                     Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1">
             <StackPanel Orientation="Horizontal">
-                <RadioButton Style="{StaticResource SegmentRadio}" GroupName="ViewMode" Content="▦  Capas" ToolTip="Ver em galeria de capas"
+                <RadioButton Style="{StaticResource SegmentRadio}" GroupName="ViewMode" Content="{l:Tr '▦  Capas'}" ToolTip="{l:Tr 'Ver em galeria de capas'}"
                              IsChecked="{Binding ViewMode, Converter={StaticResource KeyMatch}, ConverterParameter=gallery}" />
-                <RadioButton Style="{StaticResource SegmentRadio}" GroupName="ViewMode" Content="☰  Lista" ToolTip="Ver em lista"
+                <RadioButton Style="{StaticResource SegmentRadio}" GroupName="ViewMode" Content="{l:Tr '☰  Lista'}" ToolTip="{l:Tr 'Ver em lista'}"
                              IsChecked="{Binding ViewMode, Converter={StaticResource KeyMatch}, ConverterParameter=table}" />
             </StackPanel>
             </Border>
-        </Grid>
+        </WrapPanel>
 
         <!-- Corpo -->
         <Grid Grid.Row="2">
@@ -210,15 +271,15 @@
                         </Canvas>
                     </Viewbox>
                 </Border>
-                <TextBlock Text="Sua coleção está vazia" FontSize="22" FontWeight="Bold" Margin="0,22,0,0"
+                <TextBlock Text="{l:Tr 'Sua coleção está vazia'}" FontSize="22" FontWeight="Bold" Margin="0,22,0,0"
                            HorizontalAlignment="Center" />
                 <TextBlock TextWrapping="Wrap" TextAlignment="Center" Margin="0,8,0,0"
                            Foreground="{DynamicResource TextSecondaryBrush}"
-                           Text="Importe a sua planilha do Excel, um CSV ou a coleção exportada do Discogs para trazer tudo de uma vez, ou cadastre o primeiro álbum." />
+                           Text="{l:Tr 'Importe a sua planilha do Excel, um CSV ou a coleção exportada do Discogs para trazer tudo de uma vez, ou cadastre o primeiro álbum.'}" />
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,22,0,0">
-                    <Button Style="{StaticResource GhostButton}" Content="⭳  Importar (Excel, CSV ou Discogs)" Margin="0,0,8,0"
+                    <Button Style="{StaticResource GhostButton}" Content="{l:Tr '⭳  Importar (Excel, CSV ou Discogs)'}" Margin="0,0,8,0"
                             Command="{Binding ImportCommand}" />
-                    <Button Style="{StaticResource PrimaryButton}" Content="+  Adicionar álbum"
+                    <Button Style="{StaticResource PrimaryButton}" Content="{l:Tr '+  Adicionar álbum'}"
                             Command="{Binding AddCommand}" />
                 </StackPanel>
             </StackPanel>
@@ -238,11 +299,50 @@
                              Background="Transparent" BorderThickness="0" Padding="0" Margin="-8,0,0,0"
                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                              Visibility="{Binding IsGalleryMode, Converter={StaticResource BoolToVisibility}}">
-                        <ListBox.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <WrapPanel Margin="8,10,8,8" />
-                            </ItemsPanelTemplate>
-                        </ListBox.ItemsPanel>
+                        <!-- Sem agrupar, os cartões quebram linha num WrapPanel. Agrupado, o painel de fora empilha as seções
+                             e cada seção tem o seu próprio WrapPanel (GroupStyle.Panel). O painel é trocado por estilo, não inline. -->
+                        <ListBox.Style>
+                            <Style TargetType="ListBox">
+                                <Setter Property="ItemsPanel">
+                                    <Setter.Value>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel Margin="8,10,8,8" />
+                                        </ItemsPanelTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsGrouped}" Value="True">
+                                        <Setter Property="ItemsPanel">
+                                            <Setter.Value>
+                                                <ItemsPanelTemplate>
+                                                    <StackPanel Margin="8,0,8,8" />
+                                                </ItemsPanelTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ListBox.Style>
+                        <ListBox.GroupStyle>
+                            <GroupStyle>
+                                <GroupStyle.HeaderTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" Margin="8,16,0,6">
+                                            <TextBlock Text="{Binding Name}" FontSize="17" FontWeight="Bold"
+                                                       Foreground="{DynamicResource TextPrimaryBrush}" />
+                                            <TextBlock Margin="10,0,0,1" VerticalAlignment="Bottom" FontSize="12"
+                                                       Foreground="{DynamicResource TextMutedBrush}"
+                                                       Text="{Binding ItemCount, StringFormat={}({0})}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </GroupStyle.HeaderTemplate>
+                                <GroupStyle.Panel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel />
+                                    </ItemsPanelTemplate>
+                                </GroupStyle.Panel>
+                            </GroupStyle>
+                        </ListBox.GroupStyle>
                         <ListBox.InputBindings>
                             <MouseBinding Gesture="LeftDoubleClick" Command="{Binding EditCommand}" />
                         </ListBox.InputBindings>
@@ -252,14 +352,31 @@
                     <Border CornerRadius="14" Background="{DynamicResource SurfaceBrush}"
                             BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Padding="6"
                             Visibility="{Binding IsTableMode, Converter={StaticResource BoolToVisibility}}">
-                        <DataGrid ItemsSource="{Binding Albums}" SelectedItem="{Binding SelectedAlbum, Mode=TwoWay}">
+                        <DataGrid ItemsSource="{Binding Albums}" SelectedItem="{Binding SelectedAlbum, Mode=TwoWay}"
+                                  HorizontalScrollBarVisibility="Auto">
                             <DataGrid.InputBindings>
                                 <MouseBinding Gesture="LeftDoubleClick" Command="{Binding EditCommand}" />
                             </DataGrid.InputBindings>
+                            <DataGrid.GroupStyle>
+                                <GroupStyle>
+                                <GroupStyle.HeaderTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" Margin="8,16,0,6">
+                                            <TextBlock Text="{Binding Name}" FontSize="17" FontWeight="Bold"
+                                                       Foreground="{DynamicResource TextPrimaryBrush}" />
+                                            <TextBlock Margin="10,0,0,1" VerticalAlignment="Bottom" FontSize="12"
+                                                       Foreground="{DynamicResource TextMutedBrush}"
+                                                       Text="{Binding ItemCount, StringFormat={}({0})}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </GroupStyle.HeaderTemplate>
+                                
+                            </GroupStyle>
+                            </DataGrid.GroupStyle>
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="ÁLBUM" Width="2*" Binding="{Binding Title}" SortMemberPath="Title" />
-                                <DataGridTextColumn Header="ARTISTA" Width="1.4*" Binding="{Binding Artist}" SortMemberPath="Artist" />
-                                <DataGridTemplateColumn Header="MÍDIA" Width="110" SortMemberPath="Format">
+                                <DataGridTextColumn Header="{l:Tr 'ÁLBUM'}" Width="2*" MinWidth="150" Binding="{Binding Title}" SortMemberPath="Title" />
+                                <DataGridTextColumn Header="{l:Tr 'ARTISTA'}" Width="1.4*" MinWidth="120" Binding="{Binding Artist}" SortMemberPath="Artist" />
+                                <DataGridTemplateColumn Header="{l:Tr 'MÍDIA'}" Width="110" SortMemberPath="Format">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock Text="{Binding FormatDisplay}" FontWeight="SemiBold"
@@ -267,11 +384,12 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="GÊNERO" Width="1*" Binding="{Binding Genre}" SortMemberPath="Genre" />
-                                <DataGridTextColumn Header="LANÇAMENTO" Width="115" Binding="{Binding ReleaseDisplay}" SortMemberPath="ReleaseDate" />
-                                <DataGridTextColumn Header="COMPRA" Width="80" Binding="{Binding PurchaseYearDisplay}" SortMemberPath="PurchaseYear" />
-                                <DataGridTextColumn Header="VALOR" Width="110" Binding="{Binding PriceDisplay}" SortMemberPath="Price" />
-                                <DataGridTextColumn Header="NOTA" Width="90" Binding="{Binding RatingText}" SortMemberPath="Rating" />
+                                <DataGridTextColumn Header="{l:Tr 'GÊNERO'}" Width="1*" MinWidth="100" Binding="{Binding Genre}" SortMemberPath="Genre" />
+                                <DataGridTextColumn Header="{l:Tr 'LANÇAMENTO'}" Width="115" Binding="{Binding ReleaseDisplay}" SortMemberPath="ReleaseDate" />
+                                <DataGridTextColumn Header="{l:Tr 'COMPRA'}" Width="80" Binding="{Binding PurchaseYearDisplay}" SortMemberPath="PurchaseYear" />
+                                <DataGridTextColumn Header="{l:Tr 'VALOR'}" Width="110" Binding="{Binding PriceDisplay}" SortMemberPath="Price" />
+                                <DataGridTextColumn Header="{l:Tr 'NOTA'}" Width="90" Binding="{Binding RatingText}" SortMemberPath="Rating" />
+                                <DataGridTextColumn Header="{l:Tr 'EMPRESTADO PARA'}" Width="1*" MinWidth="130" Binding="{Binding LoanedTo}" SortMemberPath="LoanedTo" />
                             </DataGrid.Columns>
                         </DataGrid>
                     </Border>
@@ -279,16 +397,16 @@
                     <!-- Filtro sem resultados -->
                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
                                 Visibility="{Binding NoResults, Converter={StaticResource BoolToVisibility}}">
-                        <TextBlock Text="Nenhum item encontrado" FontSize="18" FontWeight="SemiBold" HorizontalAlignment="Center" />
-                        <TextBlock Text="Tente outra busca ou outro filtro." Margin="0,6,0,14" HorizontalAlignment="Center"
+                        <TextBlock Text="{l:Tr 'Nenhum item encontrado'}" FontSize="18" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                        <TextBlock Text="{l:Tr 'Tente outra busca ou outro filtro.'}" Margin="0,6,0,14" HorizontalAlignment="Center"
                                    Foreground="{DynamicResource TextSecondaryBrush}" />
-                        <Button Content="Limpar busca e filtros" HorizontalAlignment="Center"
+                        <Button Content="{l:Tr 'Limpar busca e filtros'}" HorizontalAlignment="Center"
                                 Command="{Binding ClearFiltersCommand}" />
                     </StackPanel>
                 </Grid>
 
                 <!-- Detalhes do álbum selecionado -->
-                <Border Grid.Column="1" Width="300" Margin="18,0,0,0" Padding="18" CornerRadius="20"
+                <Border x:Name="DetailsPanel" Grid.Column="1" Width="300" Margin="18,0,0,0" Padding="18" CornerRadius="20"
                         Background="{DynamicResource SurfaceBrush}"
                         BorderBrush="{DynamicResource LineBrush}" BorderThickness="1">
                     <Grid>
@@ -296,7 +414,7 @@
                                     Visibility="{Binding NoSelection, Converter={StaticResource BoolToVisibility}}">
                             <TextBlock Text="♫" FontSize="54" HorizontalAlignment="Center"
                                        Foreground="{DynamicResource LineBrush}" />
-                            <TextBlock Text="Selecione um álbum para ver os detalhes." TextWrapping="Wrap"
+                            <TextBlock Text="{l:Tr 'Selecione um álbum para ver os detalhes.'}" TextWrapping="Wrap"
                                        TextAlignment="Center" Margin="0,8,0,0"
                                        Foreground="{DynamicResource TextSecondaryBrush}" />
                         </StackPanel>
@@ -304,17 +422,20 @@
                         <DockPanel Visibility="{Binding HasSelection, Converter={StaticResource BoolToVisibility}}">
                             <!-- Ações -->
                             <WrapPanel DockPanel.Dock="Bottom" Margin="0,16,0,0">
-                                <Button Content="Editar" Padding="22,8" Margin="0,0,8,0" Command="{Binding EditCommand}" />
+                                <Button Content="{l:Tr 'Editar'}" Padding="22,8" Margin="0,0,8,0" Command="{Binding EditCommand}" />
                                 <Button Style="{StaticResource GhostButton}" Content="{Binding FavoriteLabel}" Margin="0,0,4,0"
-                                        ToolTip="Marca ou desmarca como favorito"
+                                        ToolTip="{l:Tr 'Marca ou desmarca como favorito'}"
                                         Command="{Binding ToggleFavoriteCommand}" />
-                                <Button Style="{StaticResource GhostButton}" Content="Excluir"
+                                <Button Style="{StaticResource GhostButton}" Content="{Binding LoanButtonText}" Margin="0,0,4,0"
+                                        ToolTip="{l:Tr 'Registra para quem você emprestou o disco, ou a devolução'}"
+                                        Command="{Binding ToggleLoanCommand}" />
+                                <Button Style="{StaticResource GhostButton}" Content="{l:Tr 'Excluir'}"
                                         Foreground="{DynamicResource ErrorBrush}" Command="{Binding DeleteCommand}" />
                             </WrapPanel>
 
                             <ScrollViewer VerticalScrollBarVisibility="Auto">
                                 <StackPanel>
-                                    <ContentControl Height="262" Content="{Binding SelectedAlbum}"
+                                    <ContentControl Height="{Binding ActualWidth, RelativeSource={RelativeSource Self}}" MaxHeight="262" Content="{Binding SelectedAlbum}"
                                                     ContentTemplate="{StaticResource CoverTemplate}" />
 
                                     <TextBlock Margin="0,16,0,0" FontSize="19" FontWeight="Bold" TextWrapping="Wrap"
@@ -330,6 +451,19 @@
                                                    Text="{Binding SelectedAlbum.FormatDisplay}" />
                                     </Border>
 
+                                    <!-- Empréstimo -->
+                                    <Border Margin="0,14,0,0" Padding="12,9" CornerRadius="12"
+                                            Background="{DynamicResource AccentSoftBrush}"
+                                            BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1"
+                                            Visibility="{Binding SelectedAlbum.IsLoaned, Converter={StaticResource BoolToVisibility}}">
+                                        <StackPanel>
+                                            <TextBlock FontWeight="SemiBold" TextWrapping="Wrap" Foreground="{DynamicResource AccentBrush}"
+                                                       Text="{Binding SelectedAlbum.LoanLabel}" />
+                                            <TextBlock Margin="0,2,0,0" FontSize="12" TextWrapping="Wrap"
+                                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                                       Text="{Binding SelectedAlbum.LoanSinceText}" />
+                                        </StackPanel>
+                                    </Border>
                                     <Grid Margin="0,16,0,0">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
@@ -341,17 +475,17 @@
                                         </Grid.RowDefinitions>
 
                                         <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,14">
-                                            <TextBlock Style="{StaticResource FieldLabel}" Text="Valor" />
+                                            <TextBlock Style="{StaticResource FieldLabel}" Text="{l:Tr 'Valor'}" />
                                             <TextBlock FontWeight="SemiBold" FontSize="15" Foreground="{DynamicResource AccentBrush}"
                                                        Text="{Binding SelectedAlbum.PriceDisplay}" />
                                         </StackPanel>
                                         <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,0,14">
-                                            <TextBlock Style="{StaticResource FieldLabel}" Text="Comprado em" />
+                                            <TextBlock Style="{StaticResource FieldLabel}" Text="{l:Tr 'Comprado em'}" />
                                             <TextBlock FontWeight="SemiBold" FontSize="15"
                                                        Text="{Binding SelectedAlbum.PurchaseYearDisplay}" />
                                         </StackPanel>
                                         <StackPanel Grid.Row="1" Grid.Column="0">
-                                            <TextBlock Style="{StaticResource FieldLabel}" Text="Lançamento" />
+                                            <TextBlock Style="{StaticResource FieldLabel}" Text="{l:Tr 'Lançamento'}" />
                                             <TextBlock FontWeight="SemiBold"
                                                        Text="{Binding SelectedAlbum.ReleaseDisplay}" />
                                         </StackPanel>
@@ -387,16 +521,16 @@
                                     <StackPanel Margin="0,8,0,0"
                                                 Visibility="{Binding SelectedAlbum.HasConditions, Converter={StaticResource BoolToVisibility}}">
                                         <StackPanel Margin="0,0,0,8" Visibility="{Binding SelectedAlbum.HasMediaCondition, Converter={StaticResource BoolToVisibility}}">
-                                            <TextBlock Style="{StaticResource FieldLabel}" Text="Conservação do disco / fita" />
+                                            <TextBlock Style="{StaticResource FieldLabel}" Text="{l:Tr 'Conservação do disco / fita'}" />
                                             <TextBlock FontWeight="SemiBold" Text="{Binding SelectedAlbum.MediaConditionLabel}" />
                                         </StackPanel>
                                         <StackPanel Margin="0,0,0,8" Visibility="{Binding SelectedAlbum.HasCoverCondition, Converter={StaticResource BoolToVisibility}}">
-                                            <TextBlock Style="{StaticResource FieldLabel}" Text="Conservação da capa" />
+                                            <TextBlock Style="{StaticResource FieldLabel}" Text="{l:Tr 'Conservação da capa'}" />
                                             <TextBlock FontWeight="SemiBold" Text="{Binding SelectedAlbum.CoverConditionLabel}" />
                                         </StackPanel>
                                     </StackPanel>
                                     <StackPanel Margin="0,0,0,8" Visibility="{Binding SelectedAlbum.HasPlace, Converter={StaticResource BoolToVisibility}}">
-                                        <TextBlock Style="{StaticResource FieldLabel}" Text="Onde comprou" />
+                                        <TextBlock Style="{StaticResource FieldLabel}" Text="{l:Tr 'Onde comprou'}" />
                                         <TextBlock FontWeight="SemiBold" TextWrapping="Wrap" Text="{Binding SelectedAlbum.PurchasePlace}" />
                                     </StackPanel>
 

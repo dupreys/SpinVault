@@ -1,6 +1,10 @@
+using ColecaoMidias.Services;
 namespace ColecaoMidias.Models;
 
-public sealed class Album : System.ComponentModel.INotifyPropertyChanged
+public sealed class Album
+#if !SPINVAULT_MOBILE
+    : System.ComponentModel.INotifyPropertyChanged
+#endif
 {
     public int Id { get; set; }
     public string Title { get; set; } = "";
@@ -36,6 +40,37 @@ public sealed class Album : System.ComponentModel.INotifyPropertyChanged
 
     public string? PurchasePlace { get; set; }
 
+    // ----- Empréstimo (v1.2) -----
+
+    /// <summary>Para quem o disco está emprestado agora (null = está na estante).</summary>
+    public string? LoanedTo { get; set; }
+
+    /// <summary>Quando foi emprestado.</summary>
+    public DateTime? LoanedOn { get; set; }
+
+    public bool IsLoaned => !string.IsNullOrWhiteSpace(LoanedTo);
+
+    /// <summary>"Emprestado para Maria" (vazio se está na estante).</summary>
+    public string LoanLabel => IsLoaned ? Loc.F("Emprestado para {0}", LoanedTo!.Trim()) : "";
+
+    /// <summary>Há quantos dias está fora: "desde 02/11/2026 · há 13 dias" (ou só "hoje").</summary>
+    public string LoanSinceText => LoanSince(DateTime.Today);
+
+    public int? LoanDays(DateTime today) => IsLoaned && LoanedOn is { } on ? Math.Max(0, (int)(today.Date - on.Date).TotalDays) : null;
+
+    public string LoanSince(DateTime today)
+    {
+        if (!IsLoaned || LoanedOn is not { } on)
+            return "";
+        var days = LoanDays(today) ?? 0;
+        var ago = days switch { 0 => Loc.T("hoje"), 1 => Loc.T("há 1 dia"), _ => Loc.F("há {0} dias", days) };
+        return Loc.F("desde {0}  ·  {1}", Fmt.Date(on), ago);
+    }
+
+    /// <summary>Resumo de todos os campos: serve para saber se o álbum recarregado do banco mudou de verdade.</summary>
+    public string Fingerprint => string.Join("\u001f", Id, Title, Artist, (int)Format, ReleaseDate?.Ticks, PurchaseYear, Price,
+        CoverFile, Notes, IsWishlist, Genre, Tags, Rating, MediaCondition, CoverCondition, PurchasePlace, LoanedTo, LoanedOn?.Ticks);
+
     private string? _tagSource;
     private IReadOnlyList<string> _tagList = Array.Empty<string>();
 
@@ -70,7 +105,7 @@ public sealed class Album : System.ComponentModel.INotifyPropertyChanged
     public string RatingText => HasRating ? new string('★', Rating) + new string('☆', 5 - Rating) : "";
     public string MediaConditionLabel => Conditions.Label(MediaCondition);
     public string CoverConditionLabel => Conditions.Label(CoverCondition);
-    public string TagsDisplay => string.Join(", ", TagList);
+    public string TagsDisplay => string.Join(", ", TagList.Select(TagUtil.Display));
 
     // Propriedades de apresentação (usadas pelas telas)
     public string FormatLabel => MediaFormatInfo.Label(Format);
@@ -78,8 +113,14 @@ public sealed class Album : System.ComponentModel.INotifyPropertyChanged
     public string ReleaseDisplay => Fmt.Date(ReleaseDate);
     public string PurchaseYearDisplay => PurchaseYear?.ToString() ?? "—";
     public string PriceDisplay => Fmt.Money(Price);
-    public string SummaryLine => $"Compra: {PurchaseYearDisplay}  ·  {PriceDisplay}  ·  Lançamento: {ReleaseDisplay}";
+    public string SummaryLine => Loc.F("Compra: {0}  ·  {1}  ·  Lançamento: {2}", PurchaseYearDisplay, PriceDisplay, ReleaseDisplay);
 
+#if SPINVAULT_MOBILE
+    // Android: a tela mostra o arquivo da capa direto (o MAUI carrega a imagem sozinho).
+    public string? CoverPath => CoverService.Resolve(CoverFile);
+    public bool HasCover => CoverPath is not null;
+    public bool NoCover => CoverPath is null;
+#else
     /// <summary>Capa já decodificada. Ligada com IsAsync=True na tela: carrega fora da thread da interface.</summary>
     public System.Windows.Media.ImageSource? CoverImage
     {
@@ -104,4 +145,5 @@ public sealed class Album : System.ComponentModel.INotifyPropertyChanged
 
     private bool _coverRequested;
     public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
+#endif
 }

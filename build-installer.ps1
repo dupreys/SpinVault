@@ -1,5 +1,5 @@
-# Gera o executável e o instalador. Uso: .\build-installer.ps1 [-Version 1.1.0]
-param([string]$Version = "1.1.0")
+# Gera o executável e o instalador. Uso: .\build-installer.ps1 [-Version 1.2.0]
+param([string]$Version = "1.2.0")
 $ErrorActionPreference = "Stop"
 Set-Location $PSScriptRoot
 

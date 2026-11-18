@@ -115,7 +115,7 @@ public static class BackupService
         Directory.CreateDirectory(folder);
         using var zip = ZipFile.OpenRead(zipPath);
 
-        var db = zip.GetEntry(DbEntry) ?? throw new InvalidDataException("Esse arquivo não é um backup da coleção (falta o banco de dados).");
+        var db = zip.GetEntry(DbEntry) ?? throw new InvalidDataException(Loc.T("Esse arquivo não é um backup da coleção (falta o banco de dados)."));
         db.ExtractToFile(Path.Combine(folder, DbEntry), overwrite: true);
 
         var covers = Path.Combine(folder, "Covers");
@@ -145,7 +145,7 @@ public static class BackupService
         }
         catch (SqliteException)
         {
-            throw new InvalidDataException("O banco de dados dentro do backup está corrompido ou não é da coleção.");
+            throw new InvalidDataException(Loc.T("O banco de dados dentro do backup está corrompido ou não é da coleção."));
         }
         finally
         {

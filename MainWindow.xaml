@@ -1,70 +1,85 @@
 <Window Icon="/Assets/app.ico" x:Class="ColecaoMidias.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:l="clr-namespace:ColecaoMidias.Services"
         xmlns:views="clr-namespace:ColecaoMidias.Views"
-        Title="SpinVault — Coleção de Mídias"
-        Width="1280" Height="780" MinWidth="1000" MinHeight="620"
+        Title="{l:Tr 'SpinVault — Coleção de Mídias'}"
+        Width="1280" Height="780" MinWidth="720" MinHeight="520"
         WindowStartupLocation="CenterScreen"
         Background="{DynamicResource WindowBackgroundBrush}"
         Foreground="{DynamicResource TextPrimaryBrush}"
         FontFamily="{StaticResource AppFont}" FontSize="13">
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="240" />
+            <ColumnDefinition x:Name="SidebarColumn" Width="240" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
         <!-- Menu lateral -->
         <Border Grid.Column="0" Background="{DynamicResource SidebarBrush}"
                 BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,1,0">
-            <DockPanel Margin="18,24,18,20">
+            <DockPanel x:Name="SidebarPanel" Margin="18,24,18,20">
                 <!-- Logo -->
-                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="4,0,0,32">
+                <StackPanel x:Name="LogoPanel" DockPanel.Dock="Top" Orientation="Horizontal" Margin="4,0,0,32">
                     <Image Width="44" Height="44" Source="/Assets/logo-128.png"
                            RenderOptions.BitmapScalingMode="HighQuality" />
-                    <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
-                        <TextBlock Text="SpinVault" FontSize="16" FontWeight="Bold" />
-                        <TextBlock Text="Vinis · CDs · Fitas" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" />
+                    <StackPanel Margin="12,0,0,0" VerticalAlignment="Center"
+                                Visibility="{Binding IsCompact, Converter={StaticResource InverseBoolToVisibility}}">
+                        <TextBlock Text="{l:Tr 'SpinVault'}" FontSize="16" FontWeight="Bold" />
+                        <TextBlock Text="{l:Tr 'Vinis · CDs · Fitas'}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" />
                     </StackPanel>
                 </StackPanel>
 
                 <!-- Rodapé: tema -->
                 <Button DockPanel.Dock="Bottom" Style="{StaticResource GhostButton}" HorizontalContentAlignment="Left"
-                        Content="{Binding ThemeButtonText}" Command="{Binding ToggleThemeCommand}" />
+                        ToolTip="{Binding ThemeButtonText}" Command="{Binding ToggleThemeCommand}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{Binding ThemeButtonIcon}" Width="26" />
+                        <TextBlock Text="{Binding ThemeButtonText}"
+                                   Visibility="{Binding IsCompact, Converter={StaticResource InverseBoolToVisibility}}" />
+                    </StackPanel>
+                </Button>
 
                 <Button DockPanel.Dock="Bottom" Style="{StaticResource GhostButton}" HorizontalContentAlignment="Left" Margin="0,0,0,4"
-                        Content="⚙   Configurações" Command="{Binding OpenSettingsCommand}" />
+                        ToolTip="{l:Tr 'Configurações'}" Command="{Binding OpenSettingsCommand}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="⚙" Width="26" />
+                        <TextBlock Text="{l:Tr 'Configurações'}"
+                                   Visibility="{Binding IsCompact, Converter={StaticResource InverseBoolToVisibility}}" />
+                    </StackPanel>
+                </Button>
 
                 <!-- Navegação -->
                 <StackPanel>
-                    <TextBlock Text="MENU" FontSize="11" FontWeight="SemiBold" Margin="8,0,0,10"
+                    <TextBlock Text="{l:Tr 'MENU'}" FontSize="11" FontWeight="SemiBold" Margin="8,0,0,10"
+                               Visibility="{Binding IsCompact, Converter={StaticResource InverseBoolToVisibility}}"
                                Foreground="{DynamicResource TextMutedBrush}" />
-                    <RadioButton Style="{StaticResource NavRadio}" GroupName="Nav"
+                    <RadioButton Style="{StaticResource NavRadio}" GroupName="Nav" ToolTip="{l:Tr 'Coleção'}"
                                  IsChecked="{Binding PageKey, Converter={StaticResource KeyMatch}, ConverterParameter=collection}">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="♫" Width="26" FontSize="16" />
-                            <TextBlock Text="Coleção" />
+                            <TextBlock Text="{l:Tr 'Coleção'}" Visibility="{Binding DataContext.IsCompact, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource InverseBoolToVisibility}}" />
                         </StackPanel>
                     </RadioButton>
-                    <RadioButton Style="{StaticResource NavRadio}" GroupName="Nav"
+                    <RadioButton Style="{StaticResource NavRadio}" GroupName="Nav" ToolTip="{l:Tr 'Desejos'}"
                                  IsChecked="{Binding PageKey, Converter={StaticResource KeyMatch}, ConverterParameter=wishlist}">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="♡" Width="26" FontSize="16" />
-                            <TextBlock Text="Desejos" />
+                            <TextBlock Text="{l:Tr 'Desejos'}" Visibility="{Binding DataContext.IsCompact, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource InverseBoolToVisibility}}" />
                         </StackPanel>
                     </RadioButton>
-                    <RadioButton Style="{StaticResource NavRadio}" GroupName="Nav"
+                    <RadioButton Style="{StaticResource NavRadio}" GroupName="Nav" ToolTip="{l:Tr 'Dashboard'}"
                                  IsChecked="{Binding PageKey, Converter={StaticResource KeyMatch}, ConverterParameter=dashboard}">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="◔" Width="26" FontSize="16" />
-                            <TextBlock Text="Dashboard" />
+                            <TextBlock Text="{l:Tr 'Dashboard'}" Visibility="{Binding DataContext.IsCompact, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource InverseBoolToVisibility}}" />
                         </StackPanel>
                     </RadioButton>
-                    <RadioButton Style="{StaticResource NavRadio}" GroupName="Nav"
+                    <RadioButton Style="{StaticResource NavRadio}" GroupName="Nav" ToolTip="{l:Tr 'Resumo'}"
                                  IsChecked="{Binding PageKey, Converter={StaticResource KeyMatch}, ConverterParameter=insights}">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="◈" Width="26" FontSize="16" />
-                            <TextBlock Text="Resumo" />
+                            <TextBlock Text="{l:Tr 'Resumo'}" Visibility="{Binding DataContext.IsCompact, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource InverseBoolToVisibility}}" />
                         </StackPanel>
                     </RadioButton>
                 </StackPanel>
@@ -75,7 +90,7 @@
         <Border Grid.Column="1" IsHitTestVisible="False" Background="{DynamicResource AmbientGlowBrush}" />
 
         <!-- Conteúdo da página atual -->
-        <Grid Grid.Column="1" Margin="32,26,32,24">
+        <Grid x:Name="ContentGrid" Grid.Column="1" Margin="32,26,32,24">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
@@ -88,9 +103,9 @@
                     Visibility="{Binding UpdateBannerVisible, Converter={StaticResource BoolToVisibility}}">
                 <DockPanel>
                     <Button DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Padding="12,5" Margin="8,0,0,0"
-                            Content="Agora não" Command="{Binding SkipUpdateCommand}" />
+                            Content="{l:Tr 'Agora não'}" Command="{Binding SkipUpdateCommand}" />
                     <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Padding="14,6"
-                            Content="Baixar" Command="{Binding DownloadUpdateCommand}" />
+                            Content="{l:Tr 'Baixar'}" Command="{Binding DownloadUpdateCommand}" />
                     <TextBlock VerticalAlignment="Center" TextWrapping="Wrap" FontWeight="SemiBold"
                                Foreground="{DynamicResource AccentBrush}" Text="{Binding UpdateBannerText}" />
                 </DockPanel>

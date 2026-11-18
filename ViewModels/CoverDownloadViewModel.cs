@@ -16,10 +16,10 @@ public partial class CoverDownloadViewModel : ObservableObject
     [ObservableProperty] private int done;
     [ObservableProperty] private int found;
     [ObservableProperty] private int missing;
-    [ObservableProperty] private string statusText = "Preparando…";
+    [ObservableProperty] private string statusText = Loc.T("Preparando…");
     [ObservableProperty] private string currentItem = "";
     [ObservableProperty] private bool isRunning = true;
-    [ObservableProperty] private string closeButtonText = "Cancelar";
+    [ObservableProperty] private string closeButtonText = Loc.T("Cancelar");
 
     /// <summary>Pelo menos uma capa foi baixada (a coleção precisa ser recarregada).</summary>
     public bool Changed { get; private set; }
@@ -47,7 +47,7 @@ public partial class CoverDownloadViewModel : ObservableObject
             {
                 _cts.Token.ThrowIfCancellationRequested();
 
-                StatusText = $"Buscando {Done + 1} de {Total}";
+                StatusText = Loc.F("Buscando {0} de {1}", Done + 1, Total);
                 CurrentItem = $"{album.Artist} — {album.Title}";
 
                 var key = $"{album.Artist.Trim().ToLowerInvariant()}|{album.Title.Trim().ToLowerInvariant()}";
@@ -60,7 +60,7 @@ public partial class CoverDownloadViewModel : ObservableObject
                     networkErrors = result.NetworkError ? networkErrors + 1 : 0;
                     if (networkErrors >= 3)
                     {
-                        StatusText = "Sem conexão com o serviço de capas. Verifique a internet e tente de novo.";
+                        StatusText = Loc.T("Sem conexão com o serviço de capas. Verifique a internet e tente de novo.");
                         return;
                     }
                 }
@@ -81,24 +81,24 @@ public partial class CoverDownloadViewModel : ObservableObject
             }
 
             StatusText = Found == 0
-                ? "Nenhuma capa encontrada."
-                : $"Concluído! {Found} capas baixadas.";
+                ? Loc.T("Nenhuma capa encontrada.")
+                : Loc.F("Concluído! {0} capas baixadas.", Found);
             if (Missing > 0 && Found > 0)
-                StatusText += $" {Missing} não foram encontradas.";
+                StatusText += Loc.F(" {0} não foram encontradas.", Missing);
         }
         catch (OperationCanceledException)
         {
-            StatusText = Found > 0 ? $"Cancelado. {Found} capas já foram salvas." : "Cancelado.";
+            StatusText = Found > 0 ? Loc.F("Cancelado. {0} capas já foram salvas.", Found) : Loc.T("Cancelado.");
         }
         catch (Exception ex)
         {
-            StatusText = $"Erro: {ex.Message}";
+            StatusText = Loc.F("Erro: {0}", ex.Message);
         }
         finally
         {
             IsRunning = false;
             CurrentItem = "";
-            CloseButtonText = "Fechar";
+            CloseButtonText = Loc.T("Fechar");
         }
     }
 }

@@ -41,8 +41,8 @@ public static class Dialogs
     {
         var dialog = new SaveFileDialog
         {
-            Title = "Exportar coleção",
-            Filter = "Planilha do Excel (*.xlsx)|*.xlsx|Texto CSV (*.csv)|*.csv",
+            Title = Loc.T("Exportar coleção"),
+            Filter = Loc.T("Planilha do Excel") + " (*.xlsx)|*.xlsx" + "|" + Loc.T("Texto CSV") + " (*.csv)|*.csv",
             FileName = $"minha-colecao-{DateTime.Now:yyyy-MM-dd}"
         };
         return dialog.ShowDialog(Owner) == true ? dialog.FileName : null;
@@ -52,8 +52,8 @@ public static class Dialogs
     {
         var dialog = new SaveFileDialog
         {
-            Title = "Salvar backup da coleção",
-            Filter = "Backup da coleção (*.zip)|*.zip",
+            Title = Loc.T("Salvar backup da coleção"),
+            Filter = Loc.T("Backup da coleção") + " (*.zip)|*.zip",
             FileName = $"backup-colecao-{DateTime.Now:yyyy-MM-dd}"
         };
         return dialog.ShowDialog(Owner) == true ? dialog.FileName : null;
@@ -91,6 +91,17 @@ public static class Dialogs
         catch (Exception) { }
     }
 
+    /// <summary>Janela com a lista completa de álbuns que fazem aniversário no mês.</summary>
+    public static void ShowAnniversaries(string title, string subtitle, IReadOnlyList<AnniversaryRow> rows) =>
+        new AnniversariesWindow(title, subtitle, rows) { Owner = Owner }.ShowDialog();
+
+    /// <summary>Pergunta para quem o álbum está sendo emprestado e desde quando. Null se cancelar.</summary>
+    public static (string Name, DateTime Date)? PromptLoan(string albumTitle, IReadOnlyList<string> suggestions)
+    {
+        var window = new LoanWindow(albumTitle, suggestions) { Owner = Owner };
+        return window.ShowDialog() == true && window.BorrowerName is { } name ? (name, window.LoanDate) : null;
+    }
+
     public static void ShowSettings(SettingsViewModel viewModel) =>
         new SettingsWindow(viewModel) { Owner = Owner }.ShowDialog();
 
@@ -98,8 +109,8 @@ public static class Dialogs
     {
         var dialog = new OpenFileDialog
         {
-            Title = "Escolha o backup para restaurar",
-            Filter = "Backup da coleção (*.zip)|*.zip"
+            Title = Loc.T("Escolha o backup para restaurar"),
+            Filter = Loc.T("Backup da coleção") + " (*.zip)|*.zip"
         };
         return dialog.ShowDialog(Owner) == true ? dialog.FileName : null;
     }
@@ -116,8 +127,8 @@ public static class Dialogs
     {
         var dialog = new SaveFileDialog
         {
-            Title = pdf ? "Salvar resumo em PDF" : "Salvar resumo como imagem",
-            Filter = pdf ? "Documento PDF (*.pdf)|*.pdf" : "Imagem PNG (*.png)|*.png",
+            Title = pdf ? Loc.T("Salvar resumo em PDF") : Loc.T("Salvar resumo como imagem"),
+            Filter = pdf ? Loc.T("Documento PDF") + " (*.pdf)|*.pdf" : Loc.T("Imagem PNG") + " (*.png)|*.png",
             DefaultExt = pdf ? ".pdf" : ".png",
             FileName = $"spinvault-resumo-{DateTime.Now:yyyy-MM-dd}"
         };
@@ -151,8 +162,8 @@ public static class Dialogs
     {
         var dialog = new OpenFileDialog
         {
-            Title = "Escolha a planilha da coleção",
-            Filter = "Planilhas do Excel (*.xlsx)|*.xlsx"
+            Title = Loc.T("Escolha a planilha da coleção"),
+            Filter = Loc.T("Planilhas do Excel") + " (*.xlsx)|*.xlsx"
         };
         return dialog.ShowDialog(Owner) == true ? dialog.FileName : null;
     }
@@ -162,8 +173,8 @@ public static class Dialogs
     {
         var dialog = new OpenFileDialog
         {
-            Title = "Escolha a planilha ou o CSV da coleção",
-            Filter = "Planilha ou CSV (*.xlsx;*.csv)|*.xlsx;*.csv|Planilhas do Excel (*.xlsx)|*.xlsx|CSV / Discogs (*.csv)|*.csv"
+            Title = Loc.T("Escolha a planilha ou o CSV da coleção"),
+            Filter = Loc.T("Planilha ou CSV") + " (*.xlsx;*.csv)|*.xlsx;*.csv" + "|" + Loc.T("Planilhas do Excel") + " (*.xlsx)|*.xlsx" + "|" + Loc.T("CSV / Discogs") + " (*.csv)|*.csv"
         };
         return dialog.ShowDialog(Owner) == true ? dialog.FileName : null;
     }
@@ -172,8 +183,8 @@ public static class Dialogs
     {
         var dialog = new OpenFileDialog
         {
-            Title = "Escolha a capa do álbum",
-            Filter = "Imagens (*.jpg;*.jpeg;*.png;*.bmp;*.gif)|*.jpg;*.jpeg;*.png;*.bmp;*.gif"
+            Title = Loc.T("Escolha a capa do álbum"),
+            Filter = Loc.T("Imagens") + " (*.jpg;*.jpeg;*.png;*.bmp;*.gif)|*.jpg;*.jpeg;*.png;*.bmp;*.gif"
         };
         return dialog.ShowDialog(Owner) == true ? dialog.FileName : null;
     }

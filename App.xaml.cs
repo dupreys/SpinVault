@@ -1,37 +1,33 @@
-using SpinVaultMobile.Cloud;
+using System.Windows;
+using System.Windows.Threading;
+using ColecaoMidias.Services;
+using ColecaoMidias.ViewModels;
+using ColecaoMidias.Views;
 
-namespace SpinVaultMobile;
+namespace ColecaoMidias;
 
 public partial class App : Application
 {
-    public App()
+    // Roda antes de o App.xaml carregar os estilos, para que todo texto já nasça no idioma escolhido.
+    static App() => Loc.Init(SettingsStore.Current.Language);
+
+    protected override void OnStartup(StartupEventArgs e)
     {
-        InitializeComponent();
-        ThemeManager.Apply();
-        MainPage = new AppShell();
+        base.OnStartup(e);
+
+        DispatcherUnhandledException += OnUnhandledException;
+
+        ThemeService.Load();   // precisa vir antes de criar as telas (define as cores)
+
+        var window = new MainWindow { DataContext = new MainViewModel() };
+        MainWindow = window;
+        window.Show();
     }
 
-    /// <summary>Recria todas as telas (usado ao trocar o idioma ou restaurar um backup).</summary>
-    public static void Reload()
+    private static void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
-        if (Current is App app)
-            app.MainPage = new AppShell();
-    }
-
-    protected override void OnStart()
-    {
-        base.OnStart();
-        // Espera a tela abrir e confere a nuvem (envia ou oferece restaurar).
-        _ = Task.Run(async () =>
-        {
-            await Task.Delay(2500);
-            await MainThread.InvokeOnMainThreadAsync(() => CloudSync.ReconcileAsync(false));
-        });
-    }
-
-    protected override void OnSleep()
-    {
-        base.OnSleep();
-        _ = CloudSync.BackupIfChangedAsync();
+        MessageBox.Show(e.Exception.Message, Loc.T("Ocorreu um erro inesperado"),
+            MessageBoxButton.OK, MessageBoxImage.Error);
+        e.Handled = true;
     }
 }

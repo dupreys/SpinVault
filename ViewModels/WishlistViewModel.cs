@@ -51,8 +51,8 @@ public partial class WishlistViewModel : ObservableObject
 
         IsEmpty = Items.Count == 0;
         SummaryText = Items.Count == 0
-            ? "Nenhum álbum na lista"
-            : $"{Items.Count} álbuns · {Fmt.Money(Items.Sum(a => a.Price))} em preços-alvo";
+            ? Loc.T("Nenhum álbum na lista")
+            : Loc.F("{0} álbuns · {1} em preços-alvo", Items.Count, Fmt.Money(Items.Sum(a => a.Price)));
 
         SelectedItem = selectId is { } id ? Items.FirstOrDefault(a => a.Id == id) : null;
     }
@@ -82,7 +82,7 @@ public partial class WishlistViewModel : ObservableObject
         if (SelectedItem is not { } item)
             return;
 
-        if (!Dialogs.Confirm("Remover da lista", $"Remover \"{item.Title}\" ({item.Artist}) da lista de desejos?"))
+        if (!Dialogs.Confirm(Loc.T("Remover da lista"), Loc.F("Remover \"{0}\" ({1}) da lista de desejos?", item.Title, item.Artist)))
             return;
 
         _repository.Delete(item.Id);

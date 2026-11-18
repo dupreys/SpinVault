@@ -1,5 +1,6 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:l="clr-namespace:ColecaoMidias.Services"
                     xmlns:conv="clr-namespace:ColecaoMidias.Converters">
 
     <!-- ========== Conversores (declarados aqui para os estilos abaixo poderem usá-los) ========== -->
@@ -625,7 +626,7 @@
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="12" />
         <Setter Property="Padding" Value="10,4" />
-        <Setter Property="Margin" Value="0,0,8,0" />
+        <Setter Property="Margin" Value="0,0,8,6" />
     </Style>
 
     <!-- DataContext: Album. Capa grande com etiquetas de mídia e preço sobre a imagem. -->
@@ -644,9 +645,15 @@
                 </Border>
                 <Border HorizontalAlignment="Right" VerticalAlignment="Top" Margin="8"
                         Padding="7,3" CornerRadius="10" Background="{DynamicResource BadgeGlassBrush}"
-                        ToolTip="Favorito"
+                        ToolTip="{l:Tr 'Favorito'}"
                         Visibility="{Binding IsFavorite, Converter={StaticResource BoolToVisibility}}">
                     <TextBlock Text="♥" FontSize="11" Foreground="#FB7185" />
+                </Border>
+                <Border HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="8"
+                        Padding="9,3" CornerRadius="10" Background="#E6F59E0B"
+                        ToolTip="{Binding LoanLabel}"
+                        Visibility="{Binding IsLoaned, Converter={StaticResource BoolToVisibility}}">
+                    <TextBlock Text="{l:Tr '⇄ Emprestado'}" FontSize="11" FontWeight="SemiBold" Foreground="#1B1203" />
                 </Border>
             </Grid>
             <TextBlock Margin="2,10,2,0" Text="{Binding Title}" FontWeight="SemiBold" FontSize="13"

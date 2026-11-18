@@ -1,4 +1,5 @@
 using System.Globalization;
+using ColecaoMidias.Services;
 using System.Text;
 
 namespace ColecaoMidias.Models;
@@ -8,16 +9,16 @@ public sealed record ConditionGrade(string Code, string Label);
 
 public static class Conditions
 {
-    public static readonly IReadOnlyList<ConditionGrade> All = new ConditionGrade[]
+    public static IReadOnlyList<ConditionGrade> All => new ConditionGrade[]
     {
-        new("M",   "Novo (M)"),
-        new("NM",  "Quase novo (NM)"),
-        new("VG+", "Excelente (VG+)"),
-        new("VG",  "Muito bom (VG)"),
-        new("G+",  "Bom+ (G+)"),
-        new("G",   "Bom (G)"),
-        new("F",   "Regular (F)"),
-        new("P",   "Ruim (P)")
+        new("M",   Loc.T("Novo (M)")),
+        new("NM",  Loc.T("Quase novo (NM)")),
+        new("VG+", Loc.T("Excelente (VG+)")),
+        new("VG",  Loc.T("Muito bom (VG)")),
+        new("G+",  Loc.T("Bom+ (G+)")),
+        new("G",   Loc.T("Bom (G)")),
+        new("F",   Loc.T("Regular (F)")),
+        new("P",   Loc.T("Ruim (P)"))
     };
 
     /// <summary>"NM" → "Quase novo (NM)". Vazio quando não há grau.</summary>
@@ -74,6 +75,12 @@ public static class TagUtil
 
     public static readonly string[] Defaults = { Favorites, ToListen };
 
+    /// <summary>Nome mostrado na tela: as listas padrão são guardadas em português e aparecem no idioma atual.</summary>
+    public static string Display(string name) =>
+        name.Equals(Favorites, StringComparison.OrdinalIgnoreCase) || name.Equals(ToListen, StringComparison.OrdinalIgnoreCase)
+            ? Loc.T(name)
+            : name;
+
     public static IReadOnlyList<string> Split(string? text)
     {
         if (string.IsNullOrWhiteSpace(text))
@@ -111,5 +118,7 @@ public static class Decades
     public static int? Of(DateTime? date) => date is { } d ? d.Year / 10 * 10 : null;
 
     /// <summary>1980 → "Anos 80"; 2000 → "Anos 2000".</summary>
-    public static string Label(int decade) => decade >= 2000 ? $"Anos {decade}" : $"Anos {decade % 100:00}";
+    public static string Label(int decade) => Loc.IsEnglish
+        ? (decade >= 2000 ? $"{decade}s" : $"{decade % 100:00}s")
+        : (decade >= 2000 ? $"Anos {decade}" : $"Anos {decade % 100:00}");
 }

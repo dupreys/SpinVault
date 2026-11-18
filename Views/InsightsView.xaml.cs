@@ -10,8 +10,8 @@ public partial class InsightsView : UserControl
     /// <summary>Em janela estreita os cartões empilham (1 coluna); na larga ficam lado a lado.</summary>
     private void OnSizeChanged(object sender, SizeChangedEventArgs e)
     {
-        SpendGrid.Columns = e.NewSize.Width < 1100 ? 1 : 3;
-        KpiGrid.Columns = e.NewSize.Width < 700 ? 1 : 3;
+        ResponsiveLayout.SetColumns(SpendGrid, e.NewSize.Width < 1000 ? 1 : 3, gap: 12);
+        ResponsiveLayout.SetColumns(KpiGrid, e.NewSize.Width < 600 ? 1 : 3, gap: 12);
     }
 
     private void OnShareClick(object sender, RoutedEventArgs e) => SharePopup.IsOpen = true;

@@ -62,6 +62,8 @@ public sealed class Database
         EnsureColumn(connection, "MediaCondition", "TEXT NULL");
         EnsureColumn(connection, "CoverCondition", "TEXT NULL");
         EnsureColumn(connection, "PurchasePlace", "TEXT NULL");
+        EnsureColumn(connection, "LoanedTo", "TEXT NULL");                       // v1.2 (empréstimos)
+        EnsureColumn(connection, "LoanedOn", "TEXT NULL");
     }
 
     private static void EnsureColumn(SqliteConnection connection, string name, string definition)

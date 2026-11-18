@@ -61,7 +61,7 @@ public sealed class CoverFetchService : IDisposable
         title = title.Trim();
         artist = artist.Trim();
         if (title.Length == 0)
-            return new CoverFetchResult(null, "Informe o nome do álbum.");
+            return new CoverFetchResult(null, Loc.T("Informe o nome do álbum."));
 
         var sawCandidates = false;
 
@@ -78,7 +78,7 @@ public sealed class CoverFetchService : IDisposable
                 {
                     var image = await DownloadCoverAsync(candidate, ct);
                     if (image is not null)
-                        return new CoverFetchResult(image, "Capa encontrada.");
+                        return new CoverFetchResult(image, Loc.T("Capa encontrada."));
                 }
             }
         }
@@ -88,20 +88,20 @@ public sealed class CoverFetchService : IDisposable
         }
         catch (HttpRequestException ex)
         {
-            return new CoverFetchResult(null, $"Sem conexão com o serviço de capas ({ex.StatusCode?.ToString() ?? ex.Message}).", NetworkError: true);
+            return new CoverFetchResult(null, Loc.F("Sem conexão com o serviço de capas ({0}).", ex.StatusCode?.ToString() ?? ex.Message), NetworkError: true);
         }
         catch (TaskCanceledException)
         {
-            return new CoverFetchResult(null, "O serviço de capas demorou demais para responder.", NetworkError: true);
+            return new CoverFetchResult(null, Loc.T("O serviço de capas demorou demais para responder."), NetworkError: true);
         }
         catch (JsonException)
         {
-            return new CoverFetchResult(null, "Resposta inesperada do serviço de capas.");
+            return new CoverFetchResult(null, Loc.T("Resposta inesperada do serviço de capas."));
         }
 
         return new CoverFetchResult(null, sawCandidates
-            ? "O álbum foi encontrado, mas não tem capa cadastrada."
-            : "Álbum não encontrado no MusicBrainz.");
+            ? Loc.T("O álbum foi encontrado, mas não tem capa cadastrada.")
+            : Loc.T("Álbum não encontrado no MusicBrainz."));
     }
 
     // ---------- MusicBrainz ----------

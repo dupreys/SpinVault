@@ -20,6 +20,13 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private string themeButtonText = "";
 
+    [ObservableProperty]
+    private string themeButtonIcon = "";
+
+    /// <summary>Janela estreita: o menu lateral mostra só os ícones.</summary>
+    [ObservableProperty]
+    private bool isCompact;
+
     public MainViewModel()
     {
         var repository = new AlbumRepository(new Database());
@@ -114,7 +121,7 @@ public partial class MainViewModel : ObservableObject
 
         if (result.Available is { } update && !skipped)
         {
-            UpdateBannerText = $"Nova versão do SpinVault disponível: {update.Version}  (você tem {UpdateService.Format(_updateService.Current)})";
+            UpdateBannerText = Loc.F("Nova versão do SpinVault disponível: {0}  (você tem {1})", update.Version, UpdateService.Format(_updateService.Current));
             UpdateBannerVisible = true;
         }
         else if (result.Available is null)
@@ -184,6 +191,10 @@ public partial class MainViewModel : ObservableObject
         UpdateThemeButtonText();
     }
 
-    private void UpdateThemeButtonText() =>
-        ThemeButtonText = ThemeService.Current == AppTheme.Dark ? "☀   Tema claro" : "☾   Tema escuro";
+    private void UpdateThemeButtonText()
+    {
+        var dark = ThemeService.Current == AppTheme.Dark;
+        ThemeButtonIcon = dark ? "☀" : "☾";
+        ThemeButtonText = dark ? Loc.T("Tema claro") : Loc.T("Tema escuro");
+    }
 }

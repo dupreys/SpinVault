@@ -37,7 +37,7 @@ public sealed class ImageDownloadService : IDisposable
     {
         var address = NormalizeInput(input);
         if (address is null)
-            return new CoverFetchResult(null, "Cole um endereço de imagem que comece com http:// ou https://.");
+            return new CoverFetchResult(null, Loc.T("Cole um endereço de imagem que comece com http:// ou https://."));
 
         byte[] data;
         try
@@ -56,15 +56,15 @@ public sealed class ImageDownloadService : IDisposable
 
                 if (!response.IsSuccessStatusCode)
                     return new CoverFetchResult(null,
-                        $"O site recusou o download ({(int)response.StatusCode}). Salve a imagem no PC e use \"Escolher capa…\".");
+                        Loc.F("O site recusou o download ({0}). Salve a imagem no PC e use \"Escolher capa…\".", (int)response.StatusCode));
 
                 var mediaType = response.Content.Headers.ContentType?.MediaType ?? "";
                 if (mediaType.StartsWith("text/", StringComparison.OrdinalIgnoreCase))
                     return new CoverFetchResult(null,
-                        "Esse link é de uma página, não de uma imagem. Clique com o botão direito na imagem e escolha \"Copiar endereço da imagem\".");
+                        Loc.T("Esse link é de uma página, não de uma imagem. Clique com o botão direito na imagem e escolha \"Copiar endereço da imagem\"."));
 
                 if (response.Content.Headers.ContentLength > MaxBytes)
-                    return new CoverFetchResult(null, "A imagem é grande demais (limite de 20 MB).");
+                    return new CoverFetchResult(null, Loc.T("A imagem é grande demais (limite de 20 MB)."));
 
                 data = await ReadLimitedAsync(response, ct);
             }
@@ -75,25 +75,25 @@ public sealed class ImageDownloadService : IDisposable
         }
         catch (HttpRequestException)
         {
-            return new CoverFetchResult(null, "Não foi possível acessar esse endereço. Verifique o link e a internet.", NetworkError: true);
+            return new CoverFetchResult(null, Loc.T("Não foi possível acessar esse endereço. Verifique o link e a internet."), NetworkError: true);
         }
         catch (TaskCanceledException)
         {
-            return new CoverFetchResult(null, "O site demorou demais para responder.", NetworkError: true);
+            return new CoverFetchResult(null, Loc.T("O site demorou demais para responder."), NetworkError: true);
         }
         catch (InvalidDataException)
         {
-            return new CoverFetchResult(null, "A imagem é grande demais (limite de 20 MB).");
+            return new CoverFetchResult(null, Loc.T("A imagem é grande demais (limite de 20 MB)."));
         }
         catch (FormatException)
         {
-            return new CoverFetchResult(null, "O link da imagem está incompleto ou inválido.");
+            return new CoverFetchResult(null, Loc.T("O link da imagem está incompleto ou inválido."));
         }
 
         if (ExtensionFor(data) is null)
-            return new CoverFetchResult(null, "O link não parece ser de uma imagem válida (use JPG, PNG, GIF, BMP ou WebP).");
+            return new CoverFetchResult(null, Loc.T("O link não parece ser de uma imagem válida (use JPG, PNG, GIF, BMP ou WebP)."));
 
-        return new CoverFetchResult(data, "Imagem baixada.");
+        return new CoverFetchResult(data, Loc.T("Imagem baixada."));
     }
 
     // ---------- Endereço ----------

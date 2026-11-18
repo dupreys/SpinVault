@@ -36,8 +36,8 @@ public partial class DuplicatesViewModel : ObservableObject
         IsEmpty = Groups.Count == 0;
         var same = Groups.Count(g => g.SameFormat);
         SummaryText = Groups.Count == 0
-            ? "Nenhum álbum repetido."
-            : $"{Groups.Count} álbuns repetidos ({same} na mesma mídia, {Groups.Count - same} em mídias diferentes).";
+            ? Loc.T("Nenhum álbum repetido.")
+            : Loc.F("{0} álbuns repetidos ({1} na mesma mídia, {2} em mídias diferentes).", Groups.Count, same, Groups.Count - same);
     }
 
     [RelayCommand]
@@ -46,8 +46,8 @@ public partial class DuplicatesViewModel : ObservableObject
         if (album is null)
             return;
 
-        if (!Dialogs.Confirm("Excluir álbum",
-                $"Excluir \"{album.Title}\" ({album.Artist}) em {MediaFormatInfo.Label(album.Format)}?\nEssa ação não pode ser desfeita."))
+        if (!Dialogs.Confirm(Loc.T("Excluir álbum"),
+                Loc.F("Excluir \"{0}\" ({1}) em {2}?\nEssa ação não pode ser desfeita.", album.Title, album.Artist, MediaFormatInfo.Label(album.Format))))
             return;
 
         _repository.Delete(album.Id);

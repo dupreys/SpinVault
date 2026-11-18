@@ -1,6 +1,7 @@
 <UserControl x:Class="ColecaoMidias.Views.WishlistView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:l="clr-namespace:ColecaoMidias.Services"
              Foreground="{DynamicResource TextPrimaryBrush}">
 
     <Grid>
@@ -11,12 +12,12 @@
 
         <DockPanel Grid.Row="0" Margin="0,0,0,20" LastChildFill="False">
             <StackPanel DockPanel.Dock="Left">
-                <TextBlock Text="Lista de desejos" FontSize="32" FontWeight="Bold" />
+                <TextBlock Text="{l:Tr 'Lista de desejos'}" FontSize="32" FontWeight="Bold" />
                 <TextBlock Margin="0,2,0,0" Text="{Binding SummaryText}" FontSize="13"
                            Foreground="{DynamicResource TextSecondaryBrush}" />
             </StackPanel>
             <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" VerticalAlignment="Center"
-                    Content="+  Adicionar desejo" Command="{Binding AddCommand}" />
+                    Content="{l:Tr '+  Adicionar desejo'}" Command="{Binding AddCommand}" />
         </DockPanel>
 
         <Grid Grid.Row="1">
@@ -24,12 +25,12 @@
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="420"
                         Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibility}}">
                 <TextBlock Text="♡" FontSize="64" HorizontalAlignment="Center" Foreground="{DynamicResource LineBrush}" />
-                <TextBlock Text="Sua lista de desejos está vazia" FontSize="20" FontWeight="Bold"
+                <TextBlock Text="{l:Tr 'Sua lista de desejos está vazia'}" FontSize="20" FontWeight="Bold"
                            HorizontalAlignment="Center" Margin="0,8,0,0" />
                 <TextBlock TextWrapping="Wrap" TextAlignment="Center" Margin="0,8,0,18"
                            Foreground="{DynamicResource TextSecondaryBrush}"
-                           Text="Anote os discos, CDs e fitas que você quer comprar, com o preço que pretende pagar. Quando comprar, é só clicar em &quot;Comprei!&quot; e o álbum vai para a coleção." />
-                <Button Style="{StaticResource PrimaryButton}" Content="+  Adicionar desejo" HorizontalAlignment="Center"
+                           Text="{l:Tr 'Anote os discos, CDs e fitas que você quer comprar, com o preço que pretende pagar. Quando comprar, é só clicar em &quot;Comprei!&quot; e o álbum vai para a coleção.'}" />
+                <Button Style="{StaticResource PrimaryButton}" Content="{l:Tr '+  Adicionar desejo'}" HorizontalAlignment="Center"
                         Command="{Binding AddCommand}" />
             </StackPanel>
 
@@ -55,7 +56,7 @@
                 </ListBox>
 
                 <!-- Detalhes -->
-                <Border Grid.Column="1" Width="300" Margin="18,0,0,0" Padding="18" CornerRadius="20"
+                <Border x:Name="DetailsPanel" Grid.Column="1" Width="300" Margin="18,0,0,0" Padding="18" CornerRadius="20"
                         Background="{DynamicResource SurfaceBrush}"
                         BorderBrush="{DynamicResource LineBrush}" BorderThickness="1">
                     <Grid>
@@ -63,25 +64,25 @@
                                     Visibility="{Binding NoSelection, Converter={StaticResource BoolToVisibility}}">
                             <TextBlock Text="♡" FontSize="54" HorizontalAlignment="Center"
                                        Foreground="{DynamicResource LineBrush}" />
-                            <TextBlock Text="Selecione um item para ver os detalhes." TextWrapping="Wrap"
+                            <TextBlock Text="{l:Tr 'Selecione um item para ver os detalhes.'}" TextWrapping="Wrap"
                                        TextAlignment="Center" Margin="0,8,0,0"
                                        Foreground="{DynamicResource TextSecondaryBrush}" />
                         </StackPanel>
 
                         <DockPanel Visibility="{Binding HasSelection, Converter={StaticResource BoolToVisibility}}">
                             <StackPanel DockPanel.Dock="Bottom" Margin="0,16,0,0">
-                                <Button Style="{StaticResource PrimaryButton}" Content="✓  Comprei!" Padding="22,9"
+                                <Button Style="{StaticResource PrimaryButton}" Content="{l:Tr '✓  Comprei!'}" Padding="22,9"
                                         Command="{Binding BoughtCommand}" />
                                 <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                                    <Button Content="Editar" Padding="22,8" Margin="0,0,8,0" Command="{Binding EditCommand}" />
-                                    <Button Style="{StaticResource GhostButton}" Content="Remover"
+                                    <Button Content="{l:Tr 'Editar'}" Padding="22,8" Margin="0,0,8,0" Command="{Binding EditCommand}" />
+                                    <Button Style="{StaticResource GhostButton}" Content="{l:Tr 'Remover'}"
                                             Foreground="{DynamicResource ErrorBrush}" Command="{Binding DeleteCommand}" />
                                 </StackPanel>
                             </StackPanel>
 
                             <ScrollViewer VerticalScrollBarVisibility="Auto">
                                 <StackPanel>
-                                    <ContentControl Height="262" Content="{Binding SelectedItem}"
+                                    <ContentControl Height="{Binding ActualWidth, RelativeSource={RelativeSource Self}}" MaxHeight="262" Content="{Binding SelectedItem}"
                                                     ContentTemplate="{StaticResource CoverTemplate}" />
                                     <TextBlock Margin="0,16,0,0" FontSize="19" FontWeight="Bold" TextWrapping="Wrap"
                                                Text="{Binding SelectedItem.Title}" />
@@ -100,12 +101,12 @@
                                             <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
                                         <StackPanel Grid.Column="0">
-                                            <TextBlock Style="{StaticResource FieldLabel}" Text="Preço-alvo" />
+                                            <TextBlock Style="{StaticResource FieldLabel}" Text="{l:Tr 'Preço-alvo'}" />
                                             <TextBlock FontWeight="SemiBold" FontSize="15" Foreground="{DynamicResource AccentBrush}"
                                                        Text="{Binding SelectedItem.PriceDisplay}" />
                                         </StackPanel>
                                         <StackPanel Grid.Column="1">
-                                            <TextBlock Style="{StaticResource FieldLabel}" Text="Lançamento" />
+                                            <TextBlock Style="{StaticResource FieldLabel}" Text="{l:Tr 'Lançamento'}" />
                                             <TextBlock FontWeight="SemiBold" Text="{Binding SelectedItem.ReleaseDisplay}" />
                                         </StackPanel>
                                     </Grid>

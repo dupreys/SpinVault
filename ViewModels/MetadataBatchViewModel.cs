@@ -16,10 +16,10 @@ public partial class MetadataBatchViewModel : ObservableObject
     [ObservableProperty] private int done;
     [ObservableProperty] private int found;
     [ObservableProperty] private int missing;
-    [ObservableProperty] private string statusText = "Preparando…";
+    [ObservableProperty] private string statusText = Loc.T("Preparando…");
     [ObservableProperty] private string currentItem = "";
     [ObservableProperty] private bool isRunning = true;
-    [ObservableProperty] private string closeButtonText = "Cancelar";
+    [ObservableProperty] private string closeButtonText = Loc.T("Cancelar");
 
     /// <summary>Pelo menos um álbum foi atualizado (a coleção precisa ser recarregada).</summary>
     public bool Changed { get; private set; }
@@ -47,7 +47,7 @@ public partial class MetadataBatchViewModel : ObservableObject
             {
                 _cts.Token.ThrowIfCancellationRequested();
 
-                StatusText = $"Buscando {Done + 1} de {Total}";
+                StatusText = Loc.F("Buscando {0} de {1}", Done + 1, Total);
                 CurrentItem = $"{album.Artist} — {album.Title}";
 
                 var key = $"{album.Artist.Trim().ToLowerInvariant()}|{album.Title.Trim().ToLowerInvariant()}";
@@ -58,7 +58,7 @@ public partial class MetadataBatchViewModel : ObservableObject
                     networkErrors = result.NetworkError ? networkErrors + 1 : 0;
                     if (networkErrors >= 3)
                     {
-                        StatusText = "Sem conexão com o serviço de dados. Verifique a internet e tente de novo.";
+                        StatusText = Loc.T("Sem conexão com o serviço de dados. Verifique a internet e tente de novo.");
                         return;
                     }
 
@@ -87,24 +87,24 @@ public partial class MetadataBatchViewModel : ObservableObject
             }
 
             StatusText = Found == 0
-                ? "Nenhum lançamento encontrado."
-                : $"Concluído! {Found} álbuns completados.";
+                ? Loc.T("Nenhum lançamento encontrado.")
+                : Loc.F("Concluído! {0} álbuns completados.", Found);
             if (Missing > 0 && Found > 0)
-                StatusText += $" {Missing} ficaram sem data (preencha à mão se quiser).";
+                StatusText += Loc.F(" {0} ficaram sem data (preencha à mão se quiser).", Missing);
         }
         catch (OperationCanceledException)
         {
-            StatusText = Found > 0 ? $"Cancelado. {Found} álbuns já foram atualizados." : "Cancelado.";
+            StatusText = Found > 0 ? Loc.F("Cancelado. {0} álbuns já foram atualizados.", Found) : Loc.T("Cancelado.");
         }
         catch (Exception ex)
         {
-            StatusText = $"Erro: {ex.Message}";
+            StatusText = Loc.F("Erro: {0}", ex.Message);
         }
         finally
         {
             IsRunning = false;
             CurrentItem = "";
-            CloseButtonText = "Fechar";
+            CloseButtonText = Loc.T("Fechar");
         }
     }
 }

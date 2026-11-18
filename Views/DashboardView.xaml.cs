@@ -17,7 +17,7 @@ public partial class DashboardView : UserControl
     private void OnSizeChanged(object sender, SizeChangedEventArgs e)
     {
         var narrow = e.NewSize.Width < 1250;
-        KpiGrid.Columns = e.NewSize.Width < 1000 ? 2 : 4;
+        ResponsiveLayout.SetColumns(KpiGrid, e.NewSize.Width < 560 ? 1 : e.NewSize.Width < 1000 ? 2 : 4, gap: 12, bottomGap: 12);
 
         if (narrow == _narrow)
             return;

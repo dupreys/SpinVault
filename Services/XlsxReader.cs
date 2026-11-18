@@ -28,19 +28,19 @@ public static class XlsxReader
         var sheet = sheets.FirstOrDefault(s =>
                         string.Equals((string?)s.Attribute("name"), sheetName, StringComparison.OrdinalIgnoreCase))
                     ?? sheets.FirstOrDefault()
-                    ?? throw new InvalidDataException("A planilha não tem nenhuma aba.");
+                    ?? throw new InvalidDataException(Loc.T("A planilha não tem nenhuma aba."));
 
         var relId = (string?)sheet.Attribute(Rel + "id");
         var rels = Load(zip, "xl/_rels/workbook.xml.rels");
         var target = rels.Descendants(PkgRel + "Relationship")
                          .FirstOrDefault(r => (string?)r.Attribute("Id") == relId)
                          ?.Attribute("Target")?.Value
-                     ?? throw new InvalidDataException("Não foi possível localizar a aba dentro do arquivo.");
+                     ?? throw new InvalidDataException(Loc.T("Não foi possível localizar a aba dentro do arquivo."));
 
         var sheetPath = target.StartsWith('/') ? target.TrimStart('/') : "xl/" + target;
         var sharedStrings = ReadSharedStrings(zip);
 
-        var entry = zip.GetEntry(sheetPath) ?? throw new InvalidDataException($"Parte \"{sheetPath}\" não encontrada.");
+        var entry = zip.GetEntry(sheetPath) ?? throw new InvalidDataException(Loc.F("Parte \"{0}\" não encontrada.", sheetPath));
         using var sheetStream = entry.Open();
 
         var rows = new List<Row>();
@@ -121,7 +121,7 @@ public static class XlsxReader
 
     private static XDocument Load(ZipArchive zip, string path)
     {
-        var entry = zip.GetEntry(path) ?? throw new InvalidDataException($"Arquivo inválido: \"{path}\" não encontrado.");
+        var entry = zip.GetEntry(path) ?? throw new InvalidDataException(Loc.F("Arquivo inválido: \"{0}\" não encontrado.", path));
         using var stream = entry.Open();
         return XDocument.Load(stream);
     }

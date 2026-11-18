@@ -8,7 +8,7 @@ public sealed class AlbumRepository
 {
     private const string Columns =
         "Id, Title, Artist, Format, ReleaseDate, PurchaseYear, PriceCents, CoverFile, Notes, IsWishlist, " +
-        "Genre, Tags, Rating, MediaCondition, CoverCondition, PurchasePlace";
+        "Genre, Tags, Rating, MediaCondition, CoverCondition, PurchasePlace, LoanedTo, LoanedOn";
 
     private readonly Database _db;
 
@@ -61,7 +61,8 @@ public sealed class AlbumRepository
                 Title = $title, Artist = $artist, Format = $format, ReleaseDate = $release,
                 PurchaseYear = $year, PriceCents = $price, CoverFile = $cover, Notes = $notes, IsWishlist = $wishlist,
                 Genre = $genre, Tags = $tags, Rating = $rating, MediaCondition = $mediaCondition,
-                CoverCondition = $coverCondition, PurchasePlace = $place
+                CoverCondition = $coverCondition, PurchasePlace = $place,
+                LoanedTo = $loanedTo, LoanedOn = $loanedOn
             WHERE Id = $id
             """;
         Bind(command, album);
@@ -102,9 +103,9 @@ public sealed class AlbumRepository
         command.Transaction = transaction;
         command.CommandText = """
             INSERT INTO Albums (Title, Artist, Format, ReleaseDate, PurchaseYear, PriceCents, CoverFile, Notes, IsWishlist,
-                                Genre, Tags, Rating, MediaCondition, CoverCondition, PurchasePlace)
+                                Genre, Tags, Rating, MediaCondition, CoverCondition, PurchasePlace, LoanedTo, LoanedOn)
             VALUES ($title, $artist, $format, $release, $year, $price, $cover, $notes, $wishlist,
-                    $genre, $tags, $rating, $mediaCondition, $coverCondition, $place);
+                    $genre, $tags, $rating, $mediaCondition, $coverCondition, $place, $loanedTo, $loanedOn);
             SELECT last_insert_rowid();
             """;
         Bind(command, album);
@@ -132,6 +133,14 @@ public sealed class AlbumRepository
         command.Parameters.AddWithValue("$mediaCondition", (object?)NullIfBlank(album.MediaCondition) ?? DBNull.Value);
         command.Parameters.AddWithValue("$coverCondition", (object?)NullIfBlank(album.CoverCondition) ?? DBNull.Value);
         command.Parameters.AddWithValue("$place", (object?)NullIfBlank(album.PurchasePlace) ?? DBNull.Value);
+
+        // Empréstimo: sem nome, a data não faz sentido e some junto.
+        var loanedTo = NullIfBlank(album.LoanedTo);
+        command.Parameters.AddWithValue("$loanedTo", (object?)loanedTo ?? DBNull.Value);
+        command.Parameters.AddWithValue("$loanedOn",
+            loanedTo is not null && album.LoanedOn.HasValue
+                ? album.LoanedOn.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
+                : DBNull.Value);
     }
 
     private static string? NullIfBlank(string? text) => string.IsNullOrWhiteSpace(text) ? null : text.Trim();
@@ -182,6 +191,9 @@ public sealed class AlbumRepository
         Rating = r.IsDBNull(12) ? 0 : r.GetInt32(12),
         MediaCondition = r.IsDBNull(13) ? null : r.GetString(13),
         CoverCondition = r.IsDBNull(14) ? null : r.GetString(14),
-        PurchasePlace = r.IsDBNull(15) ? null : r.GetString(15)
+        PurchasePlace = r.IsDBNull(15) ? null : r.GetString(15),
+        LoanedTo = r.IsDBNull(16) ? null : r.GetString(16),
+        LoanedOn = r.IsDBNull(17) || !DateTime.TryParseExact(r.GetString(17), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var loanedOn)
+            ? null : loanedOn
     };
 }

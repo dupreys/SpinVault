@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using ColecaoMidias.Models;
 using ColecaoMidias.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -24,10 +25,17 @@ public partial class SettingsViewModel : ObservableObject
         autoBackupEnabled = settings.AutoBackupEnabled;
         updateCheckEnabled = settings.UpdateCheckEnabled;
 
-        AddOptions(IntervalOptions, new[] { (1, "Todo dia"), (7, "Toda semana"), (30, "Todo mês") },
+        AddOptions(IntervalOptions, new[] { (1, Loc.T("Todo dia")), (7, Loc.T("Toda semana")), (30, Loc.T("Todo mês")) },
                    settings.BackupIntervalDays, days => _settings.BackupIntervalDays = days);
         AddOptions(KeepOptions, new[] { (3, "3"), (5, "5"), (10, "10"), (20, "20"), (30, "30") },
                    settings.BackupKeep, keep => _settings.BackupKeep = keep);
+
+        foreach (var (code, label) in new[] { (Loc.Portuguese, "Português (Brasil)"), (Loc.English, "English") })
+        {
+            var option = new ChoiceItem(code, label) { IsSelected = code == Loc.Code };
+            option.Chosen += c => { if (!_loading) ChangeLanguage(c.Key); };
+            LanguageOptions.Add(option);
+        }
 
         _loading = false;
         RefreshBackupTexts();
@@ -36,6 +44,7 @@ public partial class SettingsViewModel : ObservableObject
     public string VersionText { get; }
     public ObservableCollection<ChoiceItem> IntervalOptions { get; } = new();
     public ObservableCollection<ChoiceItem> KeepOptions { get; } = new();
+    public ObservableCollection<ChoiceItem> LanguageOptions { get; } = new();
 
     [ObservableProperty] private bool autoBackupEnabled;
     [ObservableProperty] private bool updateCheckEnabled;
@@ -82,38 +91,58 @@ public partial class SettingsViewModel : ObservableObject
 
     private static void Persist() => SettingsStore.Save();
 
+    /// <summary>Salva o idioma e oferece reiniciar (o idioma só é aplicado ao abrir o app).</summary>
+    private void ChangeLanguage(string code)
+    {
+        _settings.Language = code;
+        Persist();
+        if (code == Loc.Code)
+            return;   // voltou ao idioma que já está em uso: nada a reiniciar
+
+        // A pergunta aparece nos dois idiomas, pois o usuário ainda está no idioma antigo.
+        var restart = Dialogs.Confirm("Idioma / Language",
+            "Para aplicar o idioma, o SpinVault precisa reiniciar. Reiniciar agora?\n\n" +
+            "To apply the language, SpinVault needs to restart. Restart now?");
+        if (restart)
+            Loc.Restart();
+    }
+
     private void RefreshBackupTexts()
     {
         UsingCustomFolder = !string.IsNullOrWhiteSpace(_settings.BackupFolder);
         FolderText = _backup.Folder;
         FolderHint = UsingCustomFolder
-            ? "Pasta escolhida por você. Se for do OneDrive, o backup também vai para a nuvem."
-            : "Pasta padrão do programa. Escolha uma pasta do OneDrive para ter uma cópia na nuvem.";
+            ? Loc.T("Pasta escolhida por você. Se for do OneDrive, o backup também vai para a nuvem.")
+            : Loc.T("Pasta padrão do programa. Escolha uma pasta do OneDrive para ter uma cópia na nuvem.");
 
         var count = _backup.CountBackups();
-        var stored = count == 1 ? "1 backup guardado" : $"{count} backups guardados";
+        var stored = Loc.N(count, "1 backup guardado", "{0} backups guardados");
 
         if (!string.IsNullOrEmpty(_settings.LastBackupError))
         {
             LastBackupFailed = true;
-            LastBackupText = $"O último backup falhou: {_settings.LastBackupError}";
+            LastBackupText = Loc.F("O último backup falhou: {0}", _settings.LastBackupError);
         }
         else if (_settings.LastBackupUtc is { } last)
         {
             LastBackupFailed = false;
-            LastBackupText = $"Último backup: {last.ToLocalTime():dd/MM/yyyy 'às' HH:mm} · {stored}.";
+            var local = last.ToLocalTime();
+            var when = Loc.IsEnglish
+                ? local.ToString("MM/dd/yyyy 'at' h:mm tt", Fmt.Current)
+                : local.ToString("dd/MM/yyyy 'às' HH:mm", Fmt.Current);
+            LastBackupText = Loc.F("Último backup: {0} · {1}.", when, stored);
         }
         else
         {
             LastBackupFailed = false;
-            LastBackupText = "Nenhum backup automático foi feito ainda.";
+            LastBackupText = Loc.T("Nenhum backup automático foi feito ainda.");
         }
     }
 
     [RelayCommand]
     private void ChooseFolder()
     {
-        var picked = Dialogs.PickFolder("Escolha a pasta dos backups automáticos", _backup.Folder);
+        var picked = Dialogs.PickFolder(Loc.T("Escolha a pasta dos backups automáticos"), _backup.Folder);
         if (picked is null) return;
 
         _settings.BackupFolder = picked;
@@ -141,9 +170,9 @@ public partial class SettingsViewModel : ObservableObject
             var outcome = await Task.Run(() => _backup.RunNow());
             RefreshBackupTexts();
             if (outcome.Result == BackupResult.Failed)
-                Dialogs.Error("Não foi possível fazer o backup", outcome.Error ?? "Erro desconhecido.");
+                Dialogs.Error(Loc.T("Não foi possível fazer o backup"), outcome.Error ?? Loc.T("Erro desconhecido."));
             else if (outcome.Result == BackupResult.Busy)
-                Dialogs.Info("Backup em andamento", "Já existe um backup sendo feito. Aguarde terminar.");
+                Dialogs.Info(Loc.T("Backup em andamento"), Loc.T("Já existe um backup sendo feito. Aguarde terminar."));
         }
         finally
         {
@@ -155,7 +184,7 @@ public partial class SettingsViewModel : ObservableObject
     private async Task CheckUpdatesAsync()
     {
         IsChecking = true;
-        UpdateText = "Verificando…";
+        UpdateText = Loc.T("Verificando…");
         try
         {
             var result = await _checkUpdates();

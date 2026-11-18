@@ -21,6 +21,20 @@ public sealed class AppSettings
     public string? LastBackupFile { get; set; }
     public string? LastBackupError { get; set; }
 
+    // ----- Idioma -----
+
+    /// <summary>"pt" ou "en". Vazio = ainda não escolhido (segue o idioma do Windows).</summary>
+    public string? Language { get; set; }
+
+    // ----- Coleção (v1.2) -----
+
+    /// <summary>Como a coleção está ordenada e agrupada (lembrado entre as aberturas do app).</summary>
+    public string CollectionSort { get; set; } = "artist";
+    public string CollectionGroup { get; set; } = "none";
+
+    /// <summary>Últimas pessoas para quem você emprestou discos (sugestões ao emprestar).</summary>
+    public List<string> RecentBorrowers { get; set; } = new();
+
     // ----- Atualizações -----
     public bool UpdateCheckEnabled { get; set; } = true;
     public DateTime? LastUpdateCheckUtc { get; set; }
@@ -58,6 +72,10 @@ public sealed class AppSettings
     {
         if (s.BackupIntervalDays < 1) s.BackupIntervalDays = 7;
         if (s.BackupKeep < 1) s.BackupKeep = 10;
+        s.Language = Loc.Normalize(s.Language);
+        s.CollectionSort = CollectionOrdering.NormalizeSort(s.CollectionSort);
+        s.CollectionGroup = CollectionOrdering.NormalizeGroup(s.CollectionGroup);
+        s.RecentBorrowers = (s.RecentBorrowers ?? new()).Where(n => !string.IsNullOrWhiteSpace(n)).Take(8).ToList();
         return s;
     }
 }

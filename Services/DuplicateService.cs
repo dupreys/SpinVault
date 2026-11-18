@@ -9,7 +9,7 @@ namespace ColecaoMidias.Services;
 /// <param name="SameFormat">Pelo menos duas cópias na mesma mídia (provável cadastro repetido). Se for false, são mídias diferentes (ex.: vinil e CD), o que costuma ser proposital.</param>
 public sealed record DuplicateGroup(string Title, string Artist, IReadOnlyList<Album> Items, bool SameFormat)
 {
-    public string Kind => SameFormat ? "Mesma mídia repetida" : "Em mídias diferentes";
+    public string Kind => SameFormat ? Loc.T("Mesma mídia repetida") : Loc.T("Em mídias diferentes");
 }
 
 /// <summary>Acha álbuns repetidos ignorando maiúsculas, acentos, pontuação e sufixos entre parênteses.</summary>

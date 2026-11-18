@@ -1,3 +1,4 @@
+using ColecaoMidias.Models;
 using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
@@ -14,7 +15,7 @@ public sealed record AlbumMatch(string Id, string Title, string Artist, string R
 
     /// <summary>Texto da linha na lista de escolha, ex.: "A-HA · 1985 · Álbum".</summary>
     public string Subtitle =>
-        string.Join("  ·  ", new[] { Artist, HasDate ? ReleaseDateText : "sem data", Kind }.Where(x => x.Length > 0));
+        string.Join("  ·  ", new[] { Artist, HasDate ? ReleaseDateText : Loc.T("sem data"), Kind }.Where(x => x.Length > 0));
 }
 
 public sealed record AlbumLookupResult(IReadOnlyList<AlbumMatch> Matches, string Message, bool NetworkError = false);
@@ -47,7 +48,7 @@ public sealed class AlbumLookupService : IDisposable
     private static HttpClient CreateClient()
     {
         var client = new HttpClient { Timeout = TimeSpan.FromSeconds(25) };
-        client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("SpinVault", "1.1"));
+        client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("SpinVault", "1.2"));
         client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("(catalogo-pessoal-de-midias)"));
         return client;
     }
@@ -58,7 +59,7 @@ public sealed class AlbumLookupService : IDisposable
         artist = artist.Trim();
 
         if (title.Length == 0)
-            return new AlbumLookupResult(Array.Empty<AlbumMatch>(), "Digite o nome do álbum para buscar.");
+            return new AlbumLookupResult(Array.Empty<AlbumMatch>(), Loc.T("Digite o nome do álbum para buscar."));
 
         try
         {
@@ -72,7 +73,7 @@ public sealed class AlbumLookupService : IDisposable
             {
                 var matches = await RunQueryAsync(query, ct);
                 if (matches.Count > 0)
-                    return new AlbumLookupResult(matches, $"{matches.Count} resultado(s).");
+                    return new AlbumLookupResult(matches, Loc.F("{0} resultado(s).", matches.Count));
             }
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -82,19 +83,19 @@ public sealed class AlbumLookupService : IDisposable
         catch (HttpRequestException ex)
         {
             return new AlbumLookupResult(Array.Empty<AlbumMatch>(),
-                $"Sem conexão com o serviço de dados ({ex.StatusCode?.ToString() ?? ex.Message}). Preencha manualmente.", NetworkError: true);
+                Loc.F("Sem conexão com o serviço de dados ({0}). Preencha manualmente.", ex.StatusCode?.ToString() ?? ex.Message), NetworkError: true);
         }
         catch (TaskCanceledException)
         {
             return new AlbumLookupResult(Array.Empty<AlbumMatch>(),
-                "O serviço de dados demorou demais para responder. Tente de novo ou preencha manualmente.", NetworkError: true);
+                Loc.T("O serviço de dados demorou demais para responder. Tente de novo ou preencha manualmente."), NetworkError: true);
         }
         catch (JsonException)
         {
-            return new AlbumLookupResult(Array.Empty<AlbumMatch>(), "Resposta inesperada do serviço de dados.");
+            return new AlbumLookupResult(Array.Empty<AlbumMatch>(), Loc.T("Resposta inesperada do serviço de dados."));
         }
 
-        return new AlbumLookupResult(Array.Empty<AlbumMatch>(), "Não encontrei esse álbum. Preencha manualmente.");
+        return new AlbumLookupResult(Array.Empty<AlbumMatch>(), Loc.T("Não encontrei esse álbum. Preencha manualmente."));
     }
 
     private static string Build(string albumPart, string artist) =>
@@ -138,7 +139,7 @@ public sealed class AlbumLookupService : IDisposable
         // Melhor pontuação primeiro; álbuns "de estúdio" antes de ao vivo/coletâneas; depois o mais antigo.
         return list
             .OrderByDescending(m => m.Score)
-            .ThenBy(m => m.Kind == "Álbum" ? 0 : 1)
+            .ThenBy(m => m.Kind == Loc.T("Álbum") ? 0 : 1)
             .ThenBy(m => SortableDate(m.ReleaseDateText))
             .ToList();
     }
@@ -191,12 +192,12 @@ public sealed class AlbumLookupService : IDisposable
         return builder.ToString().Trim();
     }
 
-    /// <summary>"1985-06-01" → "01/06/1985"; "1985-06" ou "1985" → "1985" (não inventa o dia).</summary>
+    /// <summary>"1985-06-01" → "01/06/1985" (ou "06/01/1985" em inglês); "1985-06" ou "1985" → "1985" (não inventa o dia).</summary>
     internal static string FormatDate(string raw)
     {
         raw = raw.Trim();
         if (DateTime.TryParseExact(raw, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var full))
-            return full.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
+            return Fmt.Date(full);
 
         return raw.Length >= 4 && int.TryParse(raw[..4], out var year) && year is >= 1900 and <= 2100
             ? year.ToString(CultureInfo.InvariantCulture)
@@ -205,7 +206,7 @@ public sealed class AlbumLookupService : IDisposable
 
     private static DateTime SortableDate(string text)
     {
-        if (DateTime.TryParseExact(text, "dd/MM/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out var full))
+        if (text.Length > 4 && Fmt.TryParseDate(text, out var full))
             return full;
         return int.TryParse(text, out var year) ? new DateTime(year, 1, 1) : DateTime.MaxValue;
     }
@@ -214,12 +215,12 @@ public sealed class AlbumLookupService : IDisposable
     {
         var primary = Text(group, "primary-type") switch
         {
-            "Album" => "Álbum",
-            "Single" => "Single",
-            "EP" => "EP",
-            "Broadcast" => "Transmissão",
+            "Album" => Loc.T("Álbum"),
+            "Single" => Loc.T("Single"),
+            "EP" => Loc.T("EP"),
+            "Broadcast" => Loc.T("Transmissão"),
             "" => "",
-            _ => "Outro"
+            _ => Loc.T("Outro")
         };
 
         var extras = new List<string>();
@@ -229,14 +230,14 @@ public sealed class AlbumLookupService : IDisposable
             {
                 var label = item.GetString() switch
                 {
-                    "Compilation" => "Coletânea",
-                    "Live" => "Ao vivo",
-                    "Soundtrack" => "Trilha sonora",
-                    "Remix" => "Remix",
-                    "Demo" => "Demo",
-                    "Interview" => "Entrevista",
-                    "Spokenword" => "Narrado",
-                    "Audiobook" => "Audiolivro",
+                    "Compilation" => Loc.T("Coletânea"),
+                    "Live" => Loc.T("Ao vivo"),
+                    "Soundtrack" => Loc.T("Trilha sonora"),
+                    "Remix" => Loc.T("Remix"),
+                    "Demo" => Loc.T("Demo"),
+                    "Interview" => Loc.T("Entrevista"),
+                    "Spokenword" => Loc.T("Narrado"),
+                    "Audiobook" => Loc.T("Audiolivro"),
                     _ => null
                 };
                 if (label is not null)

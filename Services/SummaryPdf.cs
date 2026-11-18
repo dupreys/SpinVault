@@ -26,24 +26,25 @@ public static class SummaryPdf
         public int Number;
     }
 
-    public static byte[] Build(InsightsData data, string title = "Minha coleção de mídias")
+    public static byte[] Build(InsightsData data, string? title = null)
     {
+        title ??= Loc.T("Minha coleção de mídias");
         var cursor = new Cursor { Pdf = new PdfWriter { Title = $"{title} - SpinVault" } };
         NewPage(cursor, first: true, data, title);
 
         Kpis(cursor, data);
 
-        Section(cursor, "Valor da coleção — gasto por ano de compra", data.SpendByYear.Count > 0 ? 2 : 0, data, title);
-        BarSection(cursor, data.SpendByYear.Select(x => (x.Label, x.Total, x.Count)), money: true, data, title, "Sem compras registradas.");
+        Section(cursor, Loc.T("Valor da coleção — gasto por ano de compra"), data.SpendByYear.Count > 0 ? 2 : 0, data, title);
+        BarSection(cursor, data.SpendByYear.Select(x => (x.Label, x.Total, x.Count)), money: true, data, title, Loc.T("Sem compras registradas."));
 
-        Section(cursor, "Gasto por mídia", 2, data, title);
-        BarSection(cursor, data.SpendByMedia.Select(x => (x.Label, x.Total, x.Count)), money: true, data, title, "Sem itens.");
+        Section(cursor, Loc.T("Gasto por mídia"), 2, data, title);
+        BarSection(cursor, data.SpendByMedia.Select(x => (x.Label, x.Total, x.Count)), money: true, data, title, Loc.T("Sem itens."));
 
-        Section(cursor, "Onde mais gastei — top artistas por valor", 2, data, title);
-        BarSection(cursor, data.SpendByArtist.Select(x => (x.Label, x.Total, x.Count)), money: true, data, title, "Nenhum valor informado.");
+        Section(cursor, Loc.T("Onde mais gastei — top artistas por valor"), 2, data, title);
+        BarSection(cursor, data.SpendByArtist.Select(x => (x.Label, x.Total, x.Count)), money: true, data, title, Loc.T("Nenhum valor informado."));
 
-        Section(cursor, "Ranking — artistas com mais álbuns", 2, data, title);
-        BarSection(cursor, data.TopArtistsByCount.Select(x => (x.Label, (decimal)x.Count, x.Count)), money: false, data, title, "Sem itens.",
+        Section(cursor, Loc.T("Ranking — artistas com mais álbuns"), 2, data, title);
+        BarSection(cursor, data.TopArtistsByCount.Select(x => (x.Label, (decimal)x.Count, x.Count)), money: false, data, title, Loc.T("Sem itens."),
             detail: data.TopArtistsByCount.ToDictionary(x => x.Label, x => Fmt.Money(x.Total)));
 
         Anniversaries(cursor, data, title);
@@ -52,7 +53,7 @@ public static class SummaryPdf
         return cursor.Pdf.ToBytes();
     }
 
-    public static void Save(string path, InsightsData data, string title = "Minha coleção de mídias") =>
+    public static void Save(string path, InsightsData data, string? title = null) =>
         File.WriteAllBytes(path, Build(data, title));
 
     // ---------- Páginas ----------
@@ -74,7 +75,7 @@ public static class SummaryPdf
             c.Page.FillRoundRect(Margin + 17.5, 45.5, 5, 5, 2.5, Amber);
             c.Page.Text(Margin + 54, 47, "SpinVault", 20, White, bold: true);
             c.Page.Text(Margin + 54, 63, title, 10.5, PdfColor.Hex("#9EA6BB"));
-            c.Page.TextRight(PageW - Margin, 47, data.Today.ToString("dd 'de' MMMM 'de' yyyy", Fmt.PtBr), 10, PdfColor.Hex("#9EA6BB"));
+            c.Page.TextRight(PageW - Margin, 47, Fmt.LongDate(data.Today), 10, PdfColor.Hex("#9EA6BB"));
             c.Y = 124;
         }
         else
@@ -89,8 +90,8 @@ public static class SummaryPdf
     private static void Footer(Cursor c)
     {
         c.Page.Line(Margin, PageH - 40, PageW - Margin, PageH - 40, Track);
-        c.Page.Text(Margin, PageH - 26, "Gerado pelo SpinVault", 8.5, Muted);
-        c.Page.TextRight(PageW - Margin, PageH - 26, $"Página {c.Number}", 8.5, Muted);
+        c.Page.Text(Margin, PageH - 26, Loc.T("Gerado pelo SpinVault"), 8.5, Muted);
+        c.Page.TextRight(PageW - Margin, PageH - 26, Loc.F("Página {0}", c.Number), 8.5, Muted);
     }
 
     /// <summary>Garante espaço para <paramref name="needed"/> pontos; senão abre uma nova página.</summary>
@@ -116,10 +117,10 @@ public static class SummaryPdf
     {
         var items = new (string Label, string Value)[]
         {
-            ("ITENS", data.Count.ToString(Fmt.PtBr)),
-            ("VALOR INVESTIDO", Fmt.Money(data.TotalValue)),
-            ("TICKET MÉDIO", Fmt.Money(data.AverageTicket)),
-            ("VINIS · CDS · FITAS", $"{data.Vinyl} · {data.CD} · {data.Cassette}")
+            (Loc.T("ITENS"), data.Count.ToString(Fmt.Current)),
+            (Loc.T("VALOR INVESTIDO"), Fmt.Money(data.TotalValue)),
+            (Loc.T("TICKET MÉDIO"), Fmt.Money(data.AverageTicket)),
+            (Loc.T("VINIS · CDS · FITAS"), $"{data.Vinyl} · {data.CD} · {data.Cassette}")
         };
 
         const double gap = 10;
@@ -163,8 +164,8 @@ public static class SummaryPdf
             c.Page.FillRoundRect(barX, y - 8, barW, 8, 4, Track);
             c.Page.FillRoundRect(barX, y - 8, Math.Max(barW * (double)value / max, 4), 8, 4, Amber);
 
-            var main = money ? Fmt.Money(value) : value.ToString("0", Fmt.PtBr) + (value == 1 ? " álbum" : " álbuns");
-            var side = money ? $"{count} {(count == 1 ? "item" : "itens")}" : (detail != null && detail.TryGetValue(label, out var d) ? d : "");
+            var main = money ? Fmt.Money(value) : Loc.N((int)value, "1 álbum", "{0} álbuns");
+            var side = money ? Loc.N(count, "1 item", "{0} itens") : (detail != null && detail.TryGetValue(label, out var d) ? d : "");
 
             c.Page.TextRight(PageW - Margin - 4, y, main, 10, Ink, bold: true);
             if (side.Length > 0)
@@ -176,12 +177,12 @@ public static class SummaryPdf
 
     private static void Anniversaries(Cursor c, InsightsData data, string title)
     {
-        Section(c, $"Este mês há X anos — lançamentos de {data.MonthName}", 2, data, title);
+        Section(c, Loc.F("Este mês, álbuns que fazem aniversário — lançamentos de {0}", data.MonthName), 2, data, title);
 
         if (data.Anniversaries.Count == 0)
         {
             Ensure(c, 40, data, title);
-            c.Page.Text(Margin + 10, c.Y + 12, $"Nenhum álbum da coleção foi lançado em {data.MonthName} (com data completa).", 10, Muted);
+            c.Page.Text(Margin + 10, c.Y + 12, Loc.F("Nenhum álbum da coleção foi lançado em {0} (com data completa).", data.MonthName), 10, Muted);
             c.Y += 22;
             return;
         }
@@ -191,10 +192,10 @@ public static class SummaryPdf
             Ensure(c, 24, data, title);
             var y = c.Y + 14;
 
-            var date = $"{a.Day:00}/{data.Today.Month:00}";
+            var date = Loc.IsEnglish ? $"{data.Today.Month:00}/{a.Day:00}" : $"{a.Day:00}/{data.Today.Month:00}";
             c.Page.Text(Margin + 4, y, date, 10, a.IsToday ? AmberDark : Muted, bold: true);
             if (a.IsToday)
-                c.Page.Text(Margin + 4, y + 9, "HOJE", 6.5, AmberDark, bold: true);
+                c.Page.Text(Margin + 4, y + 9, Loc.T("HOJE"), 6.5, AmberDark, bold: true);
 
             var yearsW = c.Page.TextWidth(a.YearsText, 10, a.IsRound);
             var maxText = PageW - 2 * Margin - 60 - yearsW - 16;

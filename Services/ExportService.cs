@@ -12,11 +12,13 @@ namespace ColecaoMidias.Services;
 /// </summary>
 public static class ExportService
 {
-    private static readonly string[] Headers =
+    /// <summary>Cabeçalhos no idioma do app (o importador reconhece os dois idiomas).</summary>
+    private static string[] Headers => new[]
     {
         "Album", "Artista", "Mídia", "Lançamento", "Ano de Compra", "Valor (R$)",
-        "Gênero", "Listas", "Nota", "Conservação (mídia)", "Conservação (capa)", "Local de compra", "Observações"
-    };
+        "Gênero", "Listas", "Nota", "Conservação (mídia)", "Conservação (capa)", "Local de compra", "Observações",
+        "Emprestado para", "Data do empréstimo"
+    }.Select(Loc.T).ToArray();
 
     public static void Export(string path, IEnumerable<Album> albums)
     {
@@ -43,14 +45,16 @@ public static class ExportService
                 CsvField(MediaFormatInfo.Label(a.Format)),
                 CsvField(a.ReleaseDate.HasValue ? Fmt.Date(a.ReleaseDate) : ""),
                 CsvField(a.PurchaseYear?.ToString(CultureInfo.InvariantCulture) ?? ""),
-                CsvField(a.Price.ToString("0.00", Fmt.PtBr)),
+                CsvField(a.Price.ToString("0.00", Fmt.Current)),
                 CsvField(a.Genre ?? ""),
                 CsvField(a.TagsDisplay),
                 CsvField(a.HasRating ? a.Rating.ToString(CultureInfo.InvariantCulture) : ""),
                 CsvField(a.MediaCondition ?? ""),
                 CsvField(a.CoverCondition ?? ""),
                 CsvField(a.PurchasePlace ?? ""),
-                CsvField(a.Notes ?? "")
+                CsvField(a.Notes ?? ""),
+                CsvField(a.LoanedTo ?? ""),
+                CsvField(a.IsLoaned && a.LoanedOn.HasValue ? Fmt.Date(a.LoanedOn) : "")
             }));
         }
         return builder.ToString();
@@ -130,11 +134,11 @@ public static class ExportService
         var sheet = new StringBuilder();
         sheet.Append("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>");
         sheet.Append("<worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\">");
-        sheet.Append("<cols><col min=\"1\" max=\"2\" width=\"34\" customWidth=\"1\"/><col min=\"3\" max=\"6\" width=\"16\" customWidth=\"1\"/><col min=\"7\" max=\"8\" width=\"22\" customWidth=\"1\"/><col min=\"9\" max=\"11\" width=\"18\" customWidth=\"1\"/><col min=\"12\" max=\"13\" width=\"28\" customWidth=\"1\"/></cols>");
+        sheet.Append("<cols><col min=\"1\" max=\"2\" width=\"34\" customWidth=\"1\"/><col min=\"3\" max=\"6\" width=\"16\" customWidth=\"1\"/><col min=\"7\" max=\"8\" width=\"22\" customWidth=\"1\"/><col min=\"9\" max=\"11\" width=\"18\" customWidth=\"1\"/><col min=\"12\" max=\"13\" width=\"28\" customWidth=\"1\"/><col min=\"14\" max=\"15\" width=\"20\" customWidth=\"1\"/></cols>");
         sheet.Append("<sheetData>");
 
         // Linha 1: título; linha 2: cabeçalho (igual à planilha original).
-        sheet.Append("<row r=\"1\">").Append(Text("A1", "Minha coleção de mídias", 1)).Append("</row>");
+        sheet.Append("<row r=\"1\">").Append(Text("A1", Loc.T("Minha coleção de mídias"), 1)).Append("</row>");
         sheet.Append("<row r=\"2\">");
         for (var c = 0; c < Headers.Length; c++)
             sheet.Append(Text($"{(char)('A' + c)}2", Headers[c], 1));
@@ -167,6 +171,12 @@ public static class ExportService
                 sheet.Append(Text($"L{r}", a.PurchasePlace!));
             if (a.HasNotes)
                 sheet.Append(Text($"M{r}", a.Notes!));
+            if (a.IsLoaned)
+            {
+                sheet.Append(Text($"N{r}", a.LoanedTo!.Trim()));
+                if (a.LoanedOn is { } loaned)
+                    sheet.Append($"<c r=\"O{r}\" s=\"2\"><v>{loaned.Date.ToOADate().ToString(CultureInfo.InvariantCulture)}</v></c>");
+            }
             sheet.Append("</row>");
         }
 

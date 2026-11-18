@@ -1,16 +1,17 @@
 <Window x:Class="ColecaoMidias.Views.MetadataBatchWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Completar dados"
+        xmlns:l="clr-namespace:ColecaoMidias.Services"
+        Title="{l:Tr 'Completar dados'}"
         Width="520" SizeToContent="Height" ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
         Background="{DynamicResource WindowBackgroundBrush}"
         Foreground="{DynamicResource TextPrimaryBrush}"
         FontFamily="{StaticResource AppFont}" FontSize="13">
     <StackPanel Margin="28">
-        <TextBlock Text="Completar dados" FontSize="22" FontWeight="Bold" />
+        <TextBlock Text="{l:Tr 'Completar dados'}" FontSize="22" FontWeight="Bold" />
         <TextBlock Margin="0,4,0,20" TextWrapping="Wrap" Foreground="{DynamicResource TextSecondaryBrush}"
-                   Text="Buscando a data de lançamento dos álbuns na internet (MusicBrainz). Só preenche quando tem certeza." />
+                   Text="{l:Tr 'Buscando a data de lançamento dos álbuns na internet (MusicBrainz). Só preenche quando tem certeza.'}" />
 
         <TextBlock Text="{Binding StatusText}" FontWeight="SemiBold" TextWrapping="Wrap" />
         <TextBlock Margin="0,3,0,12" MinHeight="18" TextTrimming="CharacterEllipsis"
@@ -22,11 +23,11 @@
         <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
             <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}">
                 <Run Text="{Binding Found, Mode=OneWay}" />
-                <Run Text="completados" />
+                <Run Text="{l:Tr 'completados'}" />
             </TextBlock>
             <TextBlock Margin="22,0,0,0" Foreground="{DynamicResource TextSecondaryBrush}">
                 <Run Text="{Binding Missing, Mode=OneWay}" />
-                <Run Text="sem data" />
+                <Run Text="{l:Tr 'sem data'}" />
             </TextBlock>
         </StackPanel>
 

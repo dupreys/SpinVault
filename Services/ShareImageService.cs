@@ -57,15 +57,15 @@ public static class ShareImageService
 
         return new ShareCardModel
         {
-            DateText = data.Today.ToString("dd 'de' MMMM 'de' yyyy", Fmt.PtBr),
-            ItemsText = data.Count.ToString(Fmt.PtBr),
+            DateText = Fmt.LongDate(data.Today),
+            ItemsText = data.Count.ToString(Fmt.Current),
             ValueText = Fmt.Money(data.TotalValue),
             AverageText = Fmt.Money(data.AverageTicket),
-            VinylText = $"{data.Vinyl} vinis",
-            CdText = $"{data.CD} CDs",
-            CassetteText = $"{data.Cassette} fitas",
+            VinylText = Loc.F("{0} vinis", data.Vinyl),
+            CdText = Loc.F("{0} CDs", data.CD),
+            CassetteText = Loc.F("{0} fitas", data.Cassette),
             Covers = covers,
-            Artists = artists.Select(a => new ShareBar(a.Label, $"{a.Count} {(a.Count == 1 ? "álbum" : "álbuns")}",
+            Artists = artists.Select(a => new ShareBar(a.Label, Loc.N(a.Count, "1 álbum", "{0} álbuns"),
                 Math.Max(BarMaxWidth * a.Count / maxCount, 8))).ToList(),
             Years = years.Select(y => new ShareBar(y.Label, Fmt.Money(y.Total),
                 Math.Max(BarMaxWidth * (double)(y.Total / maxSpend), 8))).ToList()

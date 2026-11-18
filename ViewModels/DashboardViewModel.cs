@@ -27,7 +27,7 @@ public sealed class DonutSlice
     public string PercentText { get; init; } = "";
     public bool IsSelected { get; init; }
     public double Dim { get; init; } = 1;
-    public string Tip => $"{Label}: {Count} itens ({PercentText})";
+    public string Tip => Loc.F("{0}: {1} itens ({2})", Label, Count, PercentText);
 }
 
 /// <summary>Ponto do gráfico de aquisições por ano; as posições já vêm calculadas (em pixels do desenho).</summary>
@@ -43,7 +43,7 @@ public sealed class YearPoint
     public double LabelTop { get; init; }
     public bool IsSelected { get; init; }
     public double Dim { get; init; } = 1;
-    public string Tip => $"{Label}: {ValueText} itens";
+    public string Tip => Loc.F("{0}: {1} itens", Label, ValueText);
 }
 
 public partial class DashboardViewModel : ObservableObject
@@ -71,8 +71,8 @@ public partial class DashboardViewModel : ObservableObject
     [ObservableProperty] private Geometry? yearArea;
 
     [ObservableProperty] private bool hasFilters;
-    [ObservableProperty] private string scopeText = "Toda a coleção";
-    [ObservableProperty] private string albumsTitle = "Destaques da coleção";
+    [ObservableProperty] private string scopeText = Loc.T("Toda a coleção");
+    [ObservableProperty] private string albumsTitle = Loc.T("Destaques da coleção");
     [ObservableProperty] private string moreText = "";
     [ObservableProperty] private bool hasAlbums;
 
@@ -180,11 +180,11 @@ public partial class DashboardViewModel : ObservableObject
 
         // Etiquetas dos filtros ativos
         ActiveFilters.Clear();
-        if (_year is { } yearFilter) ActiveFilters.Add(new FilterChip("year", $"Compra em {yearFilter}"));
+        if (_year is { } yearFilter) ActiveFilters.Add(new FilterChip("year", Loc.F("Compra em {0}", yearFilter)));
         if (_format is { } formatFilter) ActiveFilters.Add(new FilterChip("format", MediaFormatInfo.Label(formatFilter)));
         if (_artist is { } artistFilter) ActiveFilters.Add(new FilterChip("artist", artistFilter));
         HasFilters = ActiveFilters.Count > 0;
-        ScopeText = HasFilters ? string.Join("  ·  ", ActiveFilters.Select(c => c.Text)) : "Toda a coleção";
+        ScopeText = HasFilters ? string.Join("  ·  ", ActiveFilters.Select(c => c.Text)) : Loc.T("Toda a coleção");
 
         FillBars(StatsService.Compute(Filtered(byArtist: false), topArtists: 6).TopArtists);
         FillDonut(Filtered(byFormat: false));
@@ -204,8 +204,8 @@ public partial class DashboardViewModel : ObservableObject
             Matches.Add(album);
 
         HasAlbums = Matches.Count > 0;
-        AlbumsTitle = HasFilters ? $"Álbuns selecionados ({scoped.Count})" : "Destaques da coleção";
-        MoreText = scoped.Count > limit ? $"e mais {scoped.Count - limit} álbuns" : "";
+        AlbumsTitle = HasFilters ? Loc.F("Álbuns selecionados ({0})", scoped.Count) : Loc.T("Destaques da coleção");
+        MoreText = scoped.Count > limit ? Loc.F("e mais {0} álbuns", scoped.Count - limit) : "";
     }
 
     private void FillBars(IReadOnlyList<NamedCount> source)

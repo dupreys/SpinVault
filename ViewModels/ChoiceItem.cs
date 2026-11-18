@@ -1,3 +1,4 @@
+using ColecaoMidias.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace ColecaoMidias.ViewModels;
@@ -38,6 +39,9 @@ public sealed partial class TagChoice : ObservableObject
     }
 
     public string Name { get; }
+
+    /// <summary>Nome mostrado na tela (as listas padrão aparecem no idioma atual).</summary>
+    public string Display => TagUtil.Display(Name);
 
     [ObservableProperty] private bool isSelected;
 }

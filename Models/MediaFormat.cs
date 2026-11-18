@@ -1,3 +1,5 @@
+using ColecaoMidias.Services;
+
 namespace ColecaoMidias.Models;
 
 public enum MediaFormat
@@ -11,9 +13,9 @@ public static class MediaFormatInfo
 {
     public static string Label(MediaFormat format) => format switch
     {
-        MediaFormat.Vinyl => "Vinil",
+        MediaFormat.Vinyl => Loc.T("Vinil"),
         MediaFormat.CD => "CD",
-        MediaFormat.Cassette => "Cassete",
+        MediaFormat.Cassette => Loc.T("Cassete"),
         _ => format.ToString()
     };
 

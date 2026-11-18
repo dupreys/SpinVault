@@ -1,6 +1,7 @@
 <UserControl x:Class="ColecaoMidias.Views.InsightsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:l="clr-namespace:ColecaoMidias.Services"
              Foreground="{DynamicResource TextPrimaryBrush}"
              SizeChanged="OnSizeChanged">
     <UserControl.Resources>
@@ -45,8 +46,8 @@
             <!-- Cabeçalho -->
             <DockPanel Margin="0,0,0,14">
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button x:Name="ShareButton" Content="⇪  Compartilhar" Padding="18,9" Click="OnShareClick"
-                            ToolTip="Salvar um resumo da coleção como imagem ou PDF" />
+                    <Button x:Name="ShareButton" Content="{l:Tr '⇪  Compartilhar'}" Padding="18,9" Click="OnShareClick"
+                            ToolTip="{l:Tr 'Salvar um resumo da coleção como imagem ou PDF'}" />
                     <Popup x:Name="SharePopup" PlacementTarget="{Binding ElementName=ShareButton}" Placement="Bottom"
                            StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade" HorizontalOffset="-110" VerticalOffset="6">
                         <Border Margin="0,0,14,14" Padding="6" CornerRadius="14" Width="270"
@@ -57,19 +58,19 @@
                             </Border.Effect>
                             <StackPanel>
                                 <Button Style="{StaticResource GhostButton}" HorizontalContentAlignment="Left"
-                                        Content="🖼  Imagem (PNG) para redes sociais"
+                                        Content="{l:Tr '🖼  Imagem (PNG) para redes sociais'}"
                                         Command="{Binding ExportImageCommand}" Click="OnShareItemClick" />
                                 <Button Style="{StaticResource GhostButton}" HorizontalContentAlignment="Left"
-                                        Content="📄  Relatório em PDF"
+                                        Content="{l:Tr '📄  Relatório em PDF'}"
                                         Command="{Binding ExportPdfCommand}" Click="OnShareItemClick" />
                             </StackPanel>
                         </Border>
                     </Popup>
                 </StackPanel>
                 <StackPanel>
-                    <TextBlock Text="Resumo" FontSize="28" FontWeight="Bold" />
+                    <TextBlock Text="{l:Tr 'Resumo'}" FontSize="28" FontWeight="Bold" />
                     <TextBlock Margin="0,1,0,0" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"
-                               Text="Valor da coleção, rankings e aniversários de lançamento" />
+                               Text="{l:Tr 'Valor da coleção, rankings e aniversários de lançamento'}" />
                 </StackPanel>
             </DockPanel>
 
@@ -77,20 +78,20 @@
             <UniformGrid x:Name="KpiGrid" Columns="3" Margin="0,0,0,12">
                 <Border Style="{StaticResource Card}" Margin="0,0,6,0">
                     <StackPanel>
-                        <TextBlock Text="VALOR INVESTIDO" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" />
+                        <TextBlock Text="{l:Tr 'VALOR INVESTIDO'}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" />
                         <TextBlock Margin="0,4,0,0" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"
                                    Text="{Binding TotalValueText}" />
                     </StackPanel>
                 </Border>
                 <Border Style="{StaticResource Card}" Margin="6,0">
                     <StackPanel>
-                        <TextBlock Text="ITENS NA COLEÇÃO" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" />
+                        <TextBlock Text="{l:Tr 'ITENS NA COLEÇÃO'}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" />
                         <TextBlock Margin="0,4,0,0" FontSize="26" FontWeight="Bold" Text="{Binding ItemsText}" />
                     </StackPanel>
                 </Border>
                 <Border Style="{StaticResource Card}" Margin="6,0,0,0">
                     <StackPanel>
-                        <TextBlock Text="TICKET MÉDIO" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" />
+                        <TextBlock Text="{l:Tr 'TICKET MÉDIO'}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" />
                         <TextBlock Margin="0,4,0,0" FontSize="26" FontWeight="Bold" Text="{Binding AverageText}" />
                     </StackPanel>
                 </Border>
@@ -99,7 +100,7 @@
             <!-- Este mês há X anos -->
             <Border Style="{StaticResource Card}" Margin="0,0,0,12">
                 <StackPanel>
-                    <TextBlock Style="{StaticResource CardTitle}" Text="{Binding AnniversaryTitle}" />
+                    <TextBlock Style="{StaticResource CardTitle}" Text="{Binding AnniversaryTitle}" TextTrimming="CharacterEllipsis" />
                     <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondaryBrush}"
                                Text="{Binding AnniversaryHint}"
                                Visibility="{Binding HasNoAnniversaries, Converter={StaticResource BoolToVisibility}}" />
@@ -161,7 +162,11 @@
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
-                    <TextBlock Margin="0,6,0,0" FontSize="12" Foreground="{DynamicResource TextMutedBrush}" Text="{Binding MoreText}" />
+                    <Button Style="{StaticResource GhostButton}" HorizontalAlignment="Left" Margin="0,8,0,0" Padding="12,5" FontSize="12"
+                            Foreground="{DynamicResource AccentBrush}" Content="{Binding MoreText}"
+                            ToolTip="{l:Tr 'Abrir a lista completa deste mês'}"
+                            Command="{Binding ShowAllAnniversariesCommand}"
+                            Visibility="{Binding HasMoreAnniversaries, Converter={StaticResource BoolToVisibility}}" />
                 </StackPanel>
             </Border>
 
@@ -169,19 +174,19 @@
             <UniformGrid x:Name="SpendGrid" Columns="3" Margin="0,0,0,12">
                 <Border Style="{StaticResource Card}" Margin="0,0,6,0">
                     <StackPanel>
-                        <TextBlock Style="{StaticResource CardTitle}" Text="Gasto por ano de compra" />
+                        <TextBlock Style="{StaticResource CardTitle}" Text="{l:Tr 'Gasto por ano de compra'}" />
                         <ItemsControl ItemsSource="{Binding SpendByYear}" ItemTemplate="{StaticResource BarRow}" />
                     </StackPanel>
                 </Border>
                 <Border Style="{StaticResource Card}" Margin="6,0">
                     <StackPanel>
-                        <TextBlock Style="{StaticResource CardTitle}" Text="Gasto por mídia" />
+                        <TextBlock Style="{StaticResource CardTitle}" Text="{l:Tr 'Gasto por mídia'}" />
                         <ItemsControl ItemsSource="{Binding SpendByMedia}" ItemTemplate="{StaticResource BarRow}" />
                     </StackPanel>
                 </Border>
                 <Border Style="{StaticResource Card}" Margin="6,0,0,0">
                     <StackPanel>
-                        <TextBlock Style="{StaticResource CardTitle}" Text="Onde mais gastei — artistas" />
+                        <TextBlock Style="{StaticResource CardTitle}" Text="{l:Tr 'Onde mais gastei — artistas'}" />
                         <ItemsControl ItemsSource="{Binding SpendByArtist}" ItemTemplate="{StaticResource BarRow}" />
                     </StackPanel>
                 </Border>
@@ -190,7 +195,7 @@
             <!-- Ranking por quantidade -->
             <Border Style="{StaticResource Card}" Margin="0,0,0,12">
                 <StackPanel>
-                    <TextBlock Style="{StaticResource CardTitle}" Text="Artistas com mais álbuns" />
+                    <TextBlock Style="{StaticResource CardTitle}" Text="{l:Tr 'Artistas com mais álbuns'}" />
                     <ItemsControl ItemsSource="{Binding TopArtists}" ItemTemplate="{StaticResource BarRow}" />
                 </StackPanel>
             </Border>

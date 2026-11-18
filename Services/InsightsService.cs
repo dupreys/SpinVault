@@ -10,7 +10,7 @@ public sealed record Anniversary(Album Album, int YearsAgo, int Day, bool IsToda
 {
     /// <summary>Aniversário "redondo" (5, 10, 15… anos).</summary>
     public bool IsRound => YearsAgo % 5 == 0;
-    public string YearsText => YearsAgo == 1 ? "há 1 ano" : $"há {YearsAgo} anos";
+    public string YearsText => YearsAgo == 1 ? Loc.T("há 1 ano") : Loc.F("há {0} anos", YearsAgo);
 }
 
 public sealed class InsightsData
@@ -45,7 +45,7 @@ public sealed class InsightsData
 /// <summary>Valor da coleção, rankings e aniversários de lançamento.</summary>
 public static class InsightsService
 {
-    public const string NoYearLabel = "Sem ano";
+    public static string NoYearLabel => Loc.T("Sem ano");
 
     public static InsightsData Compute(IReadOnlyList<Album> albums, DateTime today, int top = 10)
     {
@@ -88,7 +88,7 @@ public static class InsightsService
             SpendByArtist = bySpend,
             TopArtistsByCount = byCount,
             Anniversaries = FindAnniversaries(albums, today),
-            MonthName = Fmt.PtBr.DateTimeFormat.GetMonthName(today.Month)
+            MonthName = Fmt.Current.DateTimeFormat.GetMonthName(today.Month)
         };
     }
 

@@ -6,7 +6,7 @@ namespace ColecaoMidias.Services;
 /// <summary>
 /// Lê a aba "Base De Dados" da planilha de coleção:
 /// A Album | B Artista | C Midia | D Lançamento | E Ano de Compra | F Valor (R$)
-/// e, nas planilhas exportadas pela v1.1: G Gênero | H Listas | I Nota | J Conservação (mídia) | K Conservação (capa) | L Local | M Observações
+/// e, nas planilhas exportadas pela v1.1: G Gênero | H Listas | I Nota | J Conservação (mídia) | K Conservação (capa) | L Local | M Observações | N Emprestado para | O Data do empréstimo
 /// (cabeçalho na linha 2, dados a partir da linha 3).
 /// </summary>
 public sealed class ExcelImporter
@@ -41,14 +41,14 @@ public sealed class ExcelImporter
 
             if (title.Length == 0 || artist.Length == 0)
             {
-                warnings.Add($"Linha {row.Number}: álbum ou artista vazio — ignorada.");
+                warnings.Add(Loc.F("Linha {0}: álbum ou artista vazio — ignorada.", row.Number));
                 continue;
             }
 
             var formatText = row.Get("C");
             if (!MediaFormatInfo.TryParse(formatText, out var format))
             {
-                warnings.Add($"Linha {row.Number} ({title}): mídia \"{formatText}\" não reconhecida — ignorada.");
+                warnings.Add(Loc.F("Linha {0} ({1}): mídia \"{2}\" não reconhecida — ignorada.", row.Number, title, formatText));
                 continue;
             }
 
@@ -68,7 +68,11 @@ public sealed class ExcelImporter
                 MediaCondition = Conditions.Parse(row.Get("J")),
                 CoverCondition = Conditions.Parse(row.Get("K")),
                 PurchasePlace = NullIfEmpty(row.Get("L")),
-                Notes = NullIfEmpty(row.Get("M"))
+                Notes = NullIfEmpty(row.Get("M")),
+
+                // Colunas N e O (v1.2): empréstimo.
+                LoanedTo = NullIfEmpty(row.Get("N")),
+                LoanedOn = NullIfEmpty(row.Get("N")) is null ? null : ReadDate(row.Get("O")) ?? DateTime.Today
             });
         }
 

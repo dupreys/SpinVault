@@ -40,11 +40,11 @@ public sealed class CsvImporter
         }
 
         if (rows.Count == 0)
-            throw new InvalidDataException("O arquivo CSV está vazio.");
+            throw new InvalidDataException(Loc.T("O arquivo CSV está vazio."));
 
         if (headerIndex < 0)
             throw new InvalidDataException(
-                "Não reconheci as colunas do CSV. O arquivo precisa ter, no mínimo, as colunas Álbum (ou Title) e Artista (ou Artist).");
+                Loc.T("Não reconheci as colunas do CSV. O arquivo precisa ter, no mínimo, as colunas Álbum (ou Title) e Artista (ou Artist)."));
 
         var header = rows[headerIndex].Select(Norm).ToList();
         var col = new Dictionary<string, int>();
@@ -54,7 +54,7 @@ public sealed class CsvImporter
                     col[field] = i;
 
         if (!col.ContainsKey("title") || !col.ContainsKey("artist"))
-            throw new InvalidDataException("O CSV precisa ter as colunas Álbum (ou Title) e Artista (ou Artist).");
+            throw new InvalidDataException(Loc.T("O CSV precisa ter as colunas Álbum (ou Title) e Artista (ou Artist)."));
 
         LastKind = header.Contains("release_id") || header.Contains("catalog#") || header.Contains("collectionfolder")
             ? CsvKind.Discogs : CsvKind.Generic;
@@ -78,14 +78,14 @@ public sealed class CsvImporter
 
             if (title.Length == 0 || artist.Length == 0)
             {
-                warnings.Add($"Linha {lineNumber}: álbum ou artista vazio — ignorada.");
+                warnings.Add(Loc.F("Linha {0}: álbum ou artista vazio — ignorada.", lineNumber));
                 continue;
             }
 
             var formatText = Get(row, "format");
             if (!TryFormat(formatText, out var format))
             {
-                warnings.Add($"Linha {lineNumber} ({title}): mídia \"{formatText}\" não reconhecida (só vinil, CD e cassete) — ignorada.");
+                warnings.Add(Loc.F("Linha {0} ({1}): mídia \"{2}\" não reconhecida (só vinil, CD e cassete) — ignorada.", lineNumber, title, formatText));
                 continue;
             }
 
@@ -114,8 +114,11 @@ public sealed class CsvImporter
                 MediaCondition = Conditions.Parse(Get(row, "mediacondition")),
                 CoverCondition = Conditions.Parse(Get(row, "covercondition")),
                 PurchasePlace = NullIfEmpty(Unprotect(Get(row, "place"))),
-                Notes = NullIfEmpty(Unprotect(Get(row, "notes")))
+                Notes = NullIfEmpty(Unprotect(Get(row, "notes"))),
+                LoanedTo = NullIfEmpty(Unprotect(Get(row, "loanedto"))),
             };
+            if (album.LoanedTo is not null)
+                album.LoanedOn = ReadDate(Get(row, "loaneddate")) ?? DateTime.Today;
             albums.Add(album);
         }
 
@@ -133,14 +136,16 @@ public sealed class CsvImporter
         ("purchaseyear",   new() { "ano de compra", "comprado em", "ano da compra", "purchase year" }),
         ("price",          new() { "valor", "valor (r$)", "preco", "preco (r$)", "price", "valor pago" }),
         ("genre",          new() { "genero", "genre", "estilo" }),
-        ("tags",           new() { "listas", "lista", "tags", "etiquetas", "colecoes" }),
+        ("tags",           new() { "listas", "lista", "lists", "tags", "etiquetas", "colecoes" }),
         ("rating",         new() { "nota", "avaliacao", "rating", "estrelas" }),
-        ("mediacondition", new() { "conservacao (midia)", "conservacao da midia", "estado da midia", "conservacao",
+        ("mediacondition", new() { "conservacao (midia)", "condition (media)", "conservacao da midia", "estado da midia", "conservacao",
                                    "collection media condition", "media condition" }),
-        ("covercondition", new() { "conservacao (capa)", "conservacao da capa", "estado da capa",
+        ("covercondition", new() { "conservacao (capa)", "condition (sleeve)", "conservacao da capa", "estado da capa",
                                    "collection sleeve condition", "sleeve condition", "cover condition" }),
         ("place",          new() { "local de compra", "onde comprou", "loja", "comprado em (local)", "store", "purchase place" }),
         ("notes",          new() { "observacoes", "observacao", "notas pessoais", "notes", "collection notes", "obs" }),
+        ("loanedto",       new() { "emprestado para", "loaned to", "emprestado a", "emprestado" }),
+        ("loaneddate",     new() { "data do emprestimo", "loan date", "emprestado em", "data de emprestimo" }),
         ("folder",         new() { "collectionfolder", "pasta" }),
     };
 
