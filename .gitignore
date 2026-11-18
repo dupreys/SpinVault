@@ -1,20 +1,6 @@
-# Build
 bin/
 obj/
-publish/
-*.user
-*.suo
 .vs/
-.vscode/
-*.log
-# Dados locais
-*.db
-*.db-wal
-*.db-shm
-Backups/
-Covers/
-# Sistema
-Thumbs.db
-.DS_Store
-desktop.ini
-dist/
+*.user
+*.keystore
+*.apk

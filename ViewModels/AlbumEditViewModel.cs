@@ -1,451 +1,253 @@
-using System.Collections.ObjectModel;
-using ColecaoMidias.Data;
 using ColecaoMidias.Models;
 using ColecaoMidias.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
 
-namespace ColecaoMidias.ViewModels;
+namespace SpinVaultMobile.ViewModels;
 
-public partial class AlbumEditViewModel : ObservableObject
+/// <summary>Cadastro e edição de um álbum (ou de um desejo).</summary>
+public sealed partial class AlbumEditViewModel : ObservableObject
 {
-    private readonly AlbumRepository _repository;
+    private static readonly MediaFormat[] Formats = { MediaFormat.Vinyl, MediaFormat.CD, MediaFormat.Cassette };
+
     private readonly Album? _original;
-    private readonly bool _isWishlist;
-    private readonly bool _isPurchase;
+    private readonly bool _wishlist;
+    private string? _coverFile;
+    private string? _oldCoverToDelete;
 
-    private string? _pendingCoverPath;   // imagem escolhida, ainda não copiada para a pasta do app
-    private bool _coverRemoved;
+    public AlbumEditViewModel(Album? original, bool wishlist)
+    {
+        _original = original;
+        _wishlist = original?.IsWishlist ?? wishlist;
 
-    /// <summary>Disparado com true ao salvar e false ao cancelar.</summary>
-    public event Action<bool>? CloseRequested;
+        FormatLabels = Formats.Select(MediaFormatInfo.Label).ToList();
+        RatingLabels = new List<string> { "—", "★", "★★", "★★★", "★★★★", "★★★★★" };
 
-    public int? SavedId { get; private set; }
+        if (original is null)
+            return;
 
-    public string WindowTitle =>
-        _isPurchase ? "Registrar compra"
-        : _isWishlist ? (_original is null ? "Novo desejo" : "Editar desejo")
-        : _original is null ? "Novo álbum" : "Editar álbum";
+        title = original.Title;
+        artist = original.Artist;
+        formatIndex = Math.Max(0, Array.IndexOf(Formats, original.Format));
+        releaseDateText = original.ReleaseDate.HasValue ? Fmt.Date(original.ReleaseDate) : "";
+        purchaseYearText = original.PurchaseYear?.ToString() ?? "";
+        priceText = original.Price > 0 ? original.Price.ToString("0.00", Fmt.Current) : "";
+        genre = original.Genre ?? "";
+        purchasePlace = original.PurchasePlace ?? "";
+        notes = original.Notes ?? "";
+        ratingIndex = Math.Clamp(original.Rating, 0, 5);
+        _coverFile = original.CoverFile;
+    }
 
-    /// <summary>Na lista de desejos não existe "ano de compra" e o valor é o preço-alvo.</summary>
-    public bool ShowPurchaseYear => !_isWishlist;
-    public string PriceLabel => _isWishlist ? "Preço-alvo (R$)" : "Valor (R$)";
+    public bool IsWishlist => _wishlist;
+    public bool IsNotWishlist => !_wishlist;
+
+    public string PageTitle => (_original, _wishlist) switch
+    {
+        (null, false) => Loc.T("Novo álbum"),
+        (null, true) => Loc.T("Novo desejo"),
+        (_, false) => Loc.T("Editar álbum"),
+        _ => Loc.T("Editar desejo"),
+    };
+
+    public string PriceLabel => _wishlist ? Loc.T("Preço-alvo (R$)") : Loc.T("Valor (R$)");
+
+    public IReadOnlyList<string> FormatLabels { get; }
+    public IReadOnlyList<string> RatingLabels { get; }
 
     [ObservableProperty] private string title = "";
     [ObservableProperty] private string artist = "";
-    [ObservableProperty] private MediaFormat format = MediaFormat.Vinyl;
+    [ObservableProperty] private int formatIndex;
     [ObservableProperty] private string releaseDateText = "";
     [ObservableProperty] private string purchaseYearText = "";
     [ObservableProperty] private string priceText = "";
-    [ObservableProperty] private string notes = "";
-
-    // ----- Notas pessoais, gênero e listas (v1.1) -----
     [ObservableProperty] private string genre = "";
     [ObservableProperty] private string purchasePlace = "";
+    [ObservableProperty] private string notes = "";
+    [ObservableProperty] private int ratingIndex;
+    [ObservableProperty] private string statusText = "";
+    [ObservableProperty] private bool isBusy;
+    [ObservableProperty] private string? coverPath;
+    [ObservableProperty] private bool hasCover;
 
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(MediaConditionLabel))]
-    private string mediaCondition = "";
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(CoverConditionLabel))]
-    private string coverCondition = "";
-
-    [ObservableProperty] private int rating;
-    [ObservableProperty] private string newTagText = "";
-
-    public string MediaConditionLabel => MediaCondition.Length == 0 ? "Sem informação" : Conditions.Label(MediaCondition);
-    public string CoverConditionLabel => CoverCondition.Length == 0 ? "Sem informação" : Conditions.Label(CoverCondition);
-
-    /// <summary>Nota, conservação e local de compra só fazem sentido para o que já foi comprado.</summary>
-    public bool ShowCollectionFields => !_isWishlist;
-
-    public ObservableCollection<StarItem> Stars { get; } = new(Enumerable.Range(1, 5).Select(n => new StarItem(n)));
-    public ObservableCollection<ChoiceItem> MediaConditions { get; } = new();
-    public ObservableCollection<ChoiceItem> CoverConditions { get; } = new();
-    public ObservableCollection<TagChoice> TagChoices { get; } = new();
-    public IReadOnlyList<string> GenreSuggestions { get; private set; } = Array.Empty<string>();
-
-    private static readonly string[] CommonGenres =
+    public void LoadCover()
     {
-        "Rock", "Pop", "MPB", "Jazz", "Blues", "Metal", "Rock progressivo", "Eletrônica",
-        "Clássica", "Hip hop", "Soul", "Reggae", "Samba", "Country", "Folk"
-    };
-    [ObservableProperty] private string errorMessage = "";
-
-    /// <summary>Mensagem da busca de capa online (ex.: "Buscando capa…").</summary>
-    [ObservableProperty] private string coverStatus = "";
-
-    /// <summary>Mensagem da busca de dados do álbum (artista e lançamento).</summary>
-    [ObservableProperty] private string lookupStatus = "";
-
-    /// <summary>Link de uma imagem da internet colado pelo usuário.</summary>
-    [ObservableProperty] private string imageUrl = "";
-
-    /// <summary>Nome do arquivo (capa já salva) ou caminho completo (capa recém-escolhida).</summary>
-    [ObservableProperty] private string? coverPreview;
-
-    /// <param name="isWishlist">Edita um item da lista de desejos.</param>
-    /// <param name="isPurchase">O item é da lista de desejos e está sendo comprado: ao salvar, vai para a coleção.</param>
-    public AlbumEditViewModel(AlbumRepository repository, Album? original, bool isWishlist = false, bool isPurchase = false)
-    {
-        _repository = repository;
-        _original = original;
-        _isWishlist = isWishlist && !isPurchase;
-        _isPurchase = isPurchase;
-
-        BuildChoices(original);
-
-        if (original is null)
-        {
-            if (!_isWishlist)
-                PurchaseYearText = DateTime.Now.Year.ToString();
-            return;
-        }
-
-        Title = original.Title;
-        Artist = original.Artist;
-        Format = original.Format;
-        ReleaseDateText = original.ReleaseDate.HasValue ? Fmt.Date(original.ReleaseDate) : "";
-        PurchaseYearText = original.PurchaseYear?.ToString() ?? "";
-        PriceText = original.Price.ToString("0.00", Fmt.PtBr);
-        Notes = original.Notes ?? "";
-        CoverPreview = original.CoverFile;
-        Genre = original.Genre ?? "";
-        PurchasePlace = original.PurchasePlace ?? "";
-        MediaCondition = original.MediaCondition ?? "";
-        CoverCondition = original.CoverCondition ?? "";
-        Rating = original.Rating;
-
-        if (_isPurchase)
-            PurchaseYearText = DateTime.Now.Year.ToString();   // compra feita agora; o preço-alvo vira o valor inicial
+        CoverPath = CoverService.Resolve(_coverFile);
+        HasCover = CoverPath is not null;
     }
 
-    private void BuildChoices(Album? original)
+    /// <summary>Guarda a imagem escolhida na galeria como capa do álbum.</summary>
+    public void SetCover(byte[] data, string extension)
     {
-        foreach (var grade in new[] { new ConditionGrade("", "—") }.Concat(Conditions.All))
-        {
-            var tip = grade.Code.Length == 0 ? "Sem informação" : grade.Label;
-
-            var media = new ChoiceItem(grade.Code, grade.Code.Length == 0 ? "—" : grade.Code, tip)
-                { IsSelected = grade.Code == (original?.MediaCondition ?? "") };
-            media.Chosen += c => MediaCondition = c.Key;
-            MediaConditions.Add(media);
-
-            var cover = new ChoiceItem(grade.Code, grade.Code.Length == 0 ? "—" : grade.Code, tip)
-                { IsSelected = grade.Code == (original?.CoverCondition ?? "") };
-            cover.Chosen += c => CoverCondition = c.Key;
-            CoverConditions.Add(cover);
-        }
-
-        // Listas: as padrão + todas que já existem + as deste álbum.
-        var (knownGenres, knownTags) = _repository.GetKnownGenresAndTags();
-        var selected = original?.TagList ?? Array.Empty<string>();
-        foreach (var name in TagUtil.Defaults.Concat(knownTags).Concat(selected).Distinct(StringComparer.OrdinalIgnoreCase))
-            TagChoices.Add(new TagChoice(name, selected.Contains(name, StringComparer.OrdinalIgnoreCase)));
-
-        GenreSuggestions = knownGenres.Concat(CommonGenres).Distinct(StringComparer.OrdinalIgnoreCase).Take(14).ToList();
+        var (small, ext) = ImageHelper.Shrink(data, string.IsNullOrWhiteSpace(extension) ? ".jpg" : extension.ToLowerInvariant());
+        var newFile = CoverService.SaveBytes(small, ext);
+        if (_coverFile is not null && _coverFile != _original?.CoverFile)
+            CoverService.Delete(_coverFile);           // capa nova escolhida antes e já substituída
+        else if (_original?.CoverFile is not null)
+            _oldCoverToDelete = _original.CoverFile;   // a capa antiga só some quando salvar
+        _coverFile = newFile;
+        LoadCover();
     }
 
-    partial void OnRatingChanged(int value)
+    public void RemoveCover()
     {
-        foreach (var star in Stars)
-            star.Filled = star.Number <= value;
+        if (_coverFile is not null && _coverFile != _original?.CoverFile)
+            CoverService.Delete(_coverFile);
+        else if (_original?.CoverFile is not null)
+            _oldCoverToDelete = _original.CoverFile;
+        _coverFile = null;
+        LoadCover();
     }
 
-    /// <summary>Clicar na estrela marca a nota; clicar de novo na mesma tira a nota.</summary>
-    [RelayCommand]
-    private void SetRating(int number) => Rating = Rating == number ? 0 : number;
-
-    [RelayCommand]
-    private void PickGenre(string? name) => Genre = name ?? "";
-
-    [RelayCommand]
-    private void AddTag()
+    /// <summary>Busca a capa na internet (MusicBrainz / Cover Art Archive).</summary>
+    public async Task FetchCoverAsync()
     {
-        var name = TagUtil.Clean(NewTagText);
-        if (name.Length == 0)
-            return;
-
-        var existing = TagChoices.FirstOrDefault(t => t.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
-        if (existing is null)
-            TagChoices.Add(new TagChoice(name, true));
-        else
-            existing.IsSelected = true;
-
-        NewTagText = "";
-    }
-
-    /// <summary>Busca artista e data de lançamento na internet só pelo nome do álbum.</summary>
-    [RelayCommand]
-    private async Task LookupAlbumAsync()
-    {
-        if (Title.Trim().Length == 0)
+        if (string.IsNullOrWhiteSpace(Title) || string.IsNullOrWhiteSpace(Artist))
         {
-            LookupStatus = "Digite o nome do álbum para buscar.";
+            StatusText = Loc.T("Preencha o álbum e o artista para buscar a capa.");
             return;
         }
 
-        LookupStatus = "Buscando dados do álbum…";
-
-        using var service = new AlbumLookupService();
-        var result = await service.SearchAsync(Title, Artist);
-
-        if (result.Matches.Count == 0)
+        IsBusy = true;
+        StatusText = Loc.T("Buscando capa…");
+        try
         {
-            LookupStatus = result.Message;
-            return;
-        }
-
-        // Um único resultado, ou um claramente melhor que os demais: usa direto. Senão o usuário escolhe.
-        var best = result.Matches[0];
-        var clear = result.Matches.Count == 1 ||
-                    (best.Score >= 95 && result.Matches.Skip(1).All(m => m.Score < best.Score - 10));
-
-        var chosen = clear ? best : Dialogs.PickAlbumMatch(result.Matches);
-        if (chosen is null)
-        {
-            LookupStatus = "Busca cancelada. Você pode preencher manualmente.";
-            return;
-        }
-
-        Artist = chosen.Artist;
-        if (chosen.HasDate)
-            ReleaseDateText = chosen.ReleaseDateText;
-
-        LookupStatus = chosen.HasDate
-            ? $"Encontrado: {chosen.Artist}, {chosen.ReleaseDateText}. Confira antes de salvar."
-            : $"Encontrado: {chosen.Artist} (sem data cadastrada — preencha o lançamento).";
-
-        // Aproveita para trazer a capa, se o álbum ainda não tem uma.
-        if (CoverPreview is null)
-        {
-            using var covers = new CoverFetchService();
-            var data = await covers.FindCoverByIdAsync(chosen.Id);
-            if (data is not null && CoverPreview is null)
+            using var service = new CoverFetchService();
+            var result = await service.FindCoverAsync(Artist.Trim(), Title.Trim());
+            if (result.Found)
             {
-                var temp = Path.Combine(Path.GetTempPath(), $"capa_{Guid.NewGuid():N}{CoverFetchService.ExtensionFor(data)}");
-                await File.WriteAllBytesAsync(temp, data);
-                SetCoverFile(temp);
-                LookupStatus += " Capa incluída.";
+                SetCover(result.Data!, CoverFetchService.ExtensionFor(result.Data!));
+                StatusText = Loc.T("Capa encontrada.");
+            }
+            else
+            {
+                StatusText = result.Message;
             }
         }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
-    /// <summary>Chamado pelo botão "Escolher capa" e pelo arrastar-e-soltar.</summary>
-    public void SetCoverFile(string path)
+    /// <summary>Busca artista e data de lançamento pelo nome do álbum. Devolve null se não escolheu nada.</summary>
+    public async Task<AlbumMatch?> LookupAsync(Func<IReadOnlyList<AlbumMatch>, Task<AlbumMatch?>> choose)
     {
-        if (!CoverService.IsSupportedImage(path))
+        if (string.IsNullOrWhiteSpace(Title))
         {
-            ErrorMessage = "Formato de imagem não suportado. Use JPG, PNG, BMP ou GIF.";
-            return;
+            StatusText = Loc.T("Digite o nome do álbum para buscar.");
+            return null;
         }
 
-        ErrorMessage = "";
-        _pendingCoverPath = path;
-        _coverRemoved = false;
-        CoverPreview = path;
-    }
-
-    [RelayCommand]
-    private void ChooseCover()
-    {
-        var path = Dialogs.PickImageFile();
-        if (path != null)
-            SetCoverFile(path);
-    }
-
-    /// <summary>Busca a capa na internet pelo artista e título digitados.</summary>
-    [RelayCommand]
-    private async Task FetchCoverAsync()
-    {
-        if (Title.Trim().Length == 0 || Artist.Trim().Length == 0)
+        IsBusy = true;
+        StatusText = Loc.T("Buscando dados do álbum…");
+        try
         {
-            CoverStatus = "Preencha o álbum e o artista para buscar a capa.";
-            return;
-        }
-
-        CoverStatus = "Buscando capa…";
-
-        using var service = new CoverFetchService();
-        var result = await service.FindCoverAsync(Artist, Title);
-
-        if (!result.Found)
-        {
-            CoverStatus = result.Message;
-            return;
-        }
-
-        var temp = Path.Combine(Path.GetTempPath(), $"capa_{Guid.NewGuid():N}{CoverFetchService.ExtensionFor(result.Data!)}");
-        await File.WriteAllBytesAsync(temp, result.Data!);
-
-        SetCoverFile(temp);    // a cópia definitiva para a pasta do app acontece ao clicar em Salvar
-        CoverStatus = "Capa encontrada! Clique em Salvar para guardar.";
-    }
-
-    /// <summary>Baixa a capa a partir do link colado (ex.: "Copiar endereço da imagem" no Google Imagens).</summary>
-    [RelayCommand]
-    private async Task DownloadFromUrlAsync()
-    {
-        if (ImageUrl.Trim().Length == 0)
-        {
-            CoverStatus = "Cole primeiro o link da imagem.";
-            return;
-        }
-
-        CoverStatus = "Baixando imagem…";
-
-        using var service = new ImageDownloadService();
-        var result = await service.DownloadAsync(ImageUrl);
-
-        if (!result.Found)
-        {
-            CoverStatus = result.Message;
-            return;
-        }
-
-        var data = result.Data!;
-        var extension = ImageDownloadService.ExtensionFor(data);
-
-        // O app guarda JPG ou PNG; GIF, BMP e WebP são convertidos para PNG.
-        if (extension is not (".jpg" or ".png"))
-        {
-            var png = ImageConversion.ToPng(data);
-            if (png is null)
+            using var service = new AlbumLookupService();
+            var result = await service.SearchAsync(Title.Trim(), Artist.Trim());
+            if (result.Matches.Count == 0)
             {
-                CoverStatus = "Não consegui abrir esse formato de imagem (WebP?). Tente outra imagem.";
-                return;
+                StatusText = result.Message;
+                return null;
             }
 
-            data = png;
-            extension = ".png";
+            var match = AlbumLookupService.PickConfident(result.Matches, Artist.Trim());
+            match ??= await choose(result.Matches);
+            if (match is null)
+            {
+                StatusText = Loc.T("Cancelado.");
+                return null;
+            }
+
+            Artist = match.Artist;
+            if (match.HasDate)
+                ReleaseDateText = match.ReleaseDateText;
+            StatusText = Loc.F("Encontrado: {0}, {1}. Confira antes de salvar.", match.Artist, match.ReleaseDateText);
+            return match;
         }
-
-        var temp = Path.Combine(Path.GetTempPath(), $"capa_{Guid.NewGuid():N}{extension}");
-        await File.WriteAllBytesAsync(temp, data);
-
-        SetCoverFile(temp);
-        ImageUrl = "";
-        CoverStatus = "Imagem carregada! Clique em Salvar para guardar.";
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
-    /// <summary>Usado ao arrastar uma imagem/link do navegador para a janela.</summary>
-    public void UseImageUrl(string url)
+    /// <summary>Valida e monta o álbum a gravar. Devolve null (e escreve o motivo em StatusText) se algo estiver errado.</summary>
+    public Album? Build()
     {
-        ImageUrl = url.Trim();
-        DownloadFromUrlCommand.Execute(null);
-    }
-
-    [RelayCommand]
-    private void RemoveCover()
-    {
-        _pendingCoverPath = null;
-        _coverRemoved = true;
-        CoverPreview = null;
-    }
-
-    [RelayCommand]
-    private void Cancel() => CloseRequested?.Invoke(false);
-
-    [RelayCommand]
-    private void Save()
-    {
-        ErrorMessage = "";
-
-        var albumTitle = Title.Trim();
-        var albumArtist = Artist.Trim();
-
-        if (albumTitle.Length == 0) { ErrorMessage = "Informe o nome do álbum."; return; }
-        if (albumArtist.Length == 0) { ErrorMessage = "Informe o artista."; return; }
+        if (string.IsNullOrWhiteSpace(Title)) { StatusText = Loc.T("Informe o nome do álbum."); return null; }
+        if (string.IsNullOrWhiteSpace(Artist)) { StatusText = Loc.T("Informe o artista."); return null; }
 
         DateTime? release = null;
         if (ReleaseDateText.Trim().Length > 0)
         {
             if (!Fmt.TryParseDate(ReleaseDateText, out var parsedDate))
             {
-                ErrorMessage = "Data de lançamento inválida. Use dd/mm/aaaa (ou apenas o ano).";
-                return;
+                StatusText = Loc.T("Data de lançamento inválida. Use dd/mm/aaaa (ou apenas o ano).");
+                return null;
             }
             release = parsedDate;
         }
 
-        int? purchaseYear = null;
-        if (!_isWishlist && PurchaseYearText.Trim().Length > 0)
+        int? year = null;
+        if (PurchaseYearText.Trim().Length > 0)
         {
-            if (!int.TryParse(PurchaseYearText.Trim(), out var year) || year < 1900 || year > DateTime.Now.Year + 1)
+            if (!int.TryParse(PurchaseYearText.Trim(), out var parsedYear) || parsedYear < 1900 || parsedYear > 2100)
             {
-                ErrorMessage = "Ano de compra inválido.";
-                return;
+                StatusText = Loc.T("Ano de compra inválido.");
+                return null;
             }
-            purchaseYear = year;
+            year = parsedYear;
         }
-
-        decimal price = 0m;
-        if (PriceText.Trim().Length > 0)
+        else if (!_wishlist)
         {
-            if (!Fmt.TryParseMoney(PriceText, out price) || price < 0)
-            {
-                ErrorMessage = "Valor inválido. Exemplo: 45,90";
-                return;
-            }
+            year = DateTime.Today.Year;
         }
 
-        if (_repository.Exists(albumTitle, albumArtist, Format, _original?.Id, _isWishlist) &&
-            !Dialogs.Confirm("Álbum duplicado",
-                $"Você já {(_isWishlist ? "tem na lista de desejos" : "tem")} \"{albumTitle}\" de {albumArtist} em {MediaFormatInfo.Label(Format)}.\nSalvar mesmo assim?"))
+        decimal price = 0;
+        if (PriceText.Trim().Length > 0 && !Fmt.TryParseMoney(PriceText, out price))
         {
-            return;
+            StatusText = Loc.T("Valor inválido. Exemplo: 45,90");
+            return null;
         }
 
-        try
-        {
-            var coverFile = _original?.CoverFile;
-            string? coverToDelete = null;
+        // Edita o álbum original (para não perder listas, conservação e empréstimo) ou cria um novo.
+        var album = _original ?? new Album { IsWishlist = _wishlist };
+        album.Title = Title.Trim();
+        album.Artist = Artist.Trim();
+        album.Format = Formats[Math.Clamp(FormatIndex, 0, Formats.Length - 1)];
+        album.ReleaseDate = release;
+        album.PurchaseYear = year;
+        album.Price = price;
+        album.Genre = string.IsNullOrWhiteSpace(Genre) ? null : Genre.Trim();
+        album.PurchasePlace = string.IsNullOrWhiteSpace(PurchasePlace) ? null : PurchasePlace.Trim();
+        album.Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim();
+        album.Rating = Math.Clamp(RatingIndex, 0, 5);
+        album.CoverFile = _coverFile;
+        return album;
+    }
 
-            if (_pendingCoverPath != null)
-            {
-                coverToDelete = coverFile;
-                coverFile = CoverService.Import(_pendingCoverPath);
-            }
-            else if (_coverRemoved)
-            {
-                coverToDelete = coverFile;
-                coverFile = null;
-            }
+    public bool IsDuplicate(Album album) =>
+        AppData.Repo.Exists(album.Title, album.Artist, album.Format, _original?.Id, _wishlist);
 
-            var album = new Album
-            {
-                Id = _original?.Id ?? 0,
-                Title = albumTitle,
-                Artist = albumArtist,
-                Format = Format,
-                ReleaseDate = release,
-                PurchaseYear = purchaseYear,
-                Price = price,
-                CoverFile = coverFile,
-                Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim(),
-                IsWishlist = _isWishlist,
-                Genre = string.IsNullOrWhiteSpace(Genre) ? null : Genre.Trim(),
-                Tags = TagUtil.Join(TagChoices.Where(t => t.IsSelected).Select(t => t.Name)),
-                Rating = Rating,
-                MediaCondition = MediaCondition.Length == 0 ? null : MediaCondition,
-                CoverCondition = CoverCondition.Length == 0 ? null : CoverCondition,
-                PurchasePlace = string.IsNullOrWhiteSpace(PurchasePlace) ? null : PurchasePlace.Trim()
-            };
+    public string DuplicateMessage(Album album) =>
+        Loc.F("Você já {0} \"{1}\" de {2} em {3}.\nSalvar mesmo assim?",
+            _wishlist ? Loc.T("tem na lista de desejos") : Loc.T("tem"),
+            album.Title, album.Artist, MediaFormatInfo.Label(album.Format));
 
-            if (_original is null)
-                _repository.Add(album);
-            else
-                _repository.Update(album);
+    public void Save(Album album)
+    {
+        if (_original is null)
+            AppData.Repo.Add(album);
+        else
+            AppData.Repo.Update(album);
 
-            CoverService.Delete(coverToDelete);
+        if (_oldCoverToDelete is not null && _oldCoverToDelete != album.CoverFile)
+            CoverService.Delete(_oldCoverToDelete);
+    }
 
-            SavedId = album.Id;
-            CloseRequested?.Invoke(true);
-        }
-        catch (Exception ex)
-        {
-            ErrorMessage = "Não foi possível salvar: " + ex.Message;
-        }
+    /// <summary>Saiu sem salvar: apaga a capa nova que ficou solta na pasta.</summary>
+    public void DiscardUnsavedCover()
+    {
+        if (_coverFile is not null && _coverFile != _original?.CoverFile)
+            CoverService.Delete(_coverFile);
     }
 }

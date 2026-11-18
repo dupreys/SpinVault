@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="SpinVaultMobile.SummaryPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:l="clr-namespace:SpinVaultMobile"
+             BackgroundColor="{StaticResource Bg}"
+             Shell.NavBarIsVisible="False">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16,12,16,24" Spacing="12">
+            <Label Text="{l:Tr 'Resumo'}" Style="{StaticResource TitleLabel}" />
+
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                <Border Style="{StaticResource Card}">
+                    <VerticalStackLayout>
+                        <Label Text="{l:Tr 'ITENS'}" Style="{StaticResource SectionLabel}" />
+                        <Label Text="{Binding ItemsText}" FontSize="26" FontAttributes="Bold" />
+                    </VerticalStackLayout>
+                </Border>
+                <Border Grid.Column="1" Style="{StaticResource Card}">
+                    <VerticalStackLayout>
+                        <Label Text="{l:Tr 'TICKET MÉDIO'}" Style="{StaticResource SectionLabel}" />
+                        <Label Text="{Binding TicketText}" FontSize="20" FontAttributes="Bold" />
+                    </VerticalStackLayout>
+                </Border>
+            </Grid>
+
+            <Border Style="{StaticResource Card}">
+                <VerticalStackLayout>
+                    <Label Text="{l:Tr 'VALOR INVESTIDO'}" Style="{StaticResource SectionLabel}" />
+                    <Label Text="{Binding ValueText}" FontSize="26" FontAttributes="Bold" TextColor="{StaticResource Accent}" />
+                    <Label Text="{Binding MediaText}" FontSize="13" TextColor="{StaticResource TextSecondary}" Margin="0,4,0,0" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource Card}">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="{l:Tr 'Gasto por ano de compra'}" Style="{StaticResource SectionLabel}" />
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding SpendByYear}" Spacing="6">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate>
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                                    <Label Text="{Binding Label}" FontSize="14" LineBreakMode="TailTruncation" MaxLines="2" />
+                                    <Label Grid.Column="1" Text="{Binding Value}" FontSize="14" FontAttributes="Bold"
+                                           TextColor="{StaticResource Accent}" />
+                                </Grid>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource Card}">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="{l:Tr 'Artistas com mais álbuns'}" Style="{StaticResource SectionLabel}" />
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding TopArtists}" Spacing="6">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate>
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                                    <Label Text="{Binding Label}" FontSize="14" LineBreakMode="TailTruncation" MaxLines="2" />
+                                    <Label Grid.Column="1" Text="{Binding Value}" FontSize="14" FontAttributes="Bold"
+                                           TextColor="{StaticResource Accent}" />
+                                </Grid>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource Card}" IsVisible="{Binding HasAnniversaries}">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="{Binding AnniversaryTitle}" Style="{StaticResource SectionLabel}" />
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding Anniversaries}" Spacing="6">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate>
+                                <VerticalStackLayout>
+                                    <Label Text="{Binding Label}" FontSize="14" />
+                                    <Label Text="{Binding Value}" FontSize="12" TextColor="{StaticResource TextSecondary}" />
+                                </VerticalStackLayout>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

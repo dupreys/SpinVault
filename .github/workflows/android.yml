@@ -1,0 +1,74 @@
+name: Gerar APK do Android
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: microsoft
+          java-version: "17"
+
+      - name: Instalar workload do MAUI Android
+        run: dotnet workload install maui-android
+
+      - name: Definir versão
+        run: |
+          if [ "${{ github.ref_type }}" = "tag" ]; then V="${{ github.ref_name }}"; V="${V#v}"; else V="0.0.0"; fi
+          echo "VERSION=${V%%-*}" >> "$GITHUB_ENV"
+
+      # O APK precisa estar assinado para instalar. Se você definir os segredos ANDROID_KEYSTORE_BASE64,
+      # ANDROID_KEYSTORE_PASSWORD e ANDROID_KEY_ALIAS, as atualizações instalam por cima da versão anterior.
+      # Sem eles, usa-se uma chave temporária (cada APK vira uma instalação nova).
+      - name: Preparar chave de assinatura
+        env:
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KS_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          if [ -n "$KS_B64" ]; then
+            echo "$KS_B64" | base64 -d > spinvault.keystore
+            echo "KS_PASS=$KS_PASS" >> "$GITHUB_ENV"; echo "KS_ALIAS=$KS_ALIAS" >> "$GITHUB_ENV"
+          else
+            keytool -genkeypair -keystore spinvault.keystore -alias spinvault -keyalg RSA -keysize 2048 \
+              -validity 10000 -storepass spinvault -keypass spinvault -dname "CN=SpinVault"
+            echo "KS_PASS=spinvault" >> "$GITHUB_ENV"; echo "KS_ALIAS=spinvault" >> "$GITHUB_ENV"
+          fi
+
+      - name: Gerar APK
+        run: >
+          dotnet publish SpinVault.Android.csproj -c Release -f net10.0-android
+          -p:ApplicationDisplayVersion=$VERSION -p:ApplicationVersion=${{ github.run_number }}
+          -p:AndroidKeyStore=true -p:AndroidSigningKeyStore=$PWD/spinvault.keystore
+          -p:AndroidSigningKeyAlias=$KS_ALIAS -p:AndroidSigningKeyPass=env:KS_PASS
+          -p:AndroidSigningStorePass=env:KS_PASS -o apk
+
+      - name: Renomear APK
+        run: |
+          mkdir dist
+          cp "$(ls apk/*-Signed.apk apk/*.apk 2>/dev/null | head -n1)" "dist/SpinVault-$VERSION.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apk
+          path: dist/*.apk
+
+      - name: Anexar à release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.apk

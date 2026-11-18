@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="SpinVaultMobile.SettingsPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:l="clr-namespace:SpinVaultMobile"
+             BackgroundColor="{StaticResource Bg}"
+             Shell.NavBarIsVisible="False">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16,12,16,24" Spacing="12">
+            <Label Text="{l:Tr 'Configurações'}" Style="{StaticResource TitleLabel}" />
+
+            <Border Style="{StaticResource Card}">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="Idioma / Language" FontAttributes="Bold" FontSize="16" />
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                        <Button x:Name="PortugueseButton" Text="Português (Brasil)" Style="{StaticResource GhostButton}" Clicked="OnPortugueseClicked" />
+                        <Button x:Name="EnglishButton" Grid.Column="1" Text="English" Style="{StaticResource GhostButton}" Clicked="OnEnglishClicked" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource Card}">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="{l:Tr 'Tema'}" FontAttributes="Bold" FontSize="16" />
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                        <Button x:Name="DarkButton" Text="{l:Tr 'Escuro'}" Style="{StaticResource GhostButton}" Clicked="OnDarkClicked" />
+                        <Button x:Name="LightButton" Grid.Column="1" Text="{l:Tr 'Claro'}" Style="{StaticResource GhostButton}" Clicked="OnLightClicked" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource Card}">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="{l:Tr 'Nuvem (Google Drive)'}" FontAttributes="Bold" FontSize="16" />
+                    <Label x:Name="CloudStatusLabel" FontSize="13" TextColor="{StaticResource TextSecondary}" />
+                    <Button x:Name="CloudSignInButton" Text="{l:Tr 'Entrar com o Google'}" Style="{StaticResource PrimaryButton}" Clicked="OnCloudSignInClicked" />
+                    <Button x:Name="CloudSyncButton" Text="{l:Tr 'Sincronizar agora'}" Style="{StaticResource GhostButton}" Clicked="OnCloudSyncClicked" />
+                    <Button x:Name="CloudSignOutButton" Text="{l:Tr 'Sair da conta'}" Style="{StaticResource GhostButton}" Clicked="OnCloudSignOutClicked" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource Card}">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="{l:Tr 'Planilha ou CSV'}" FontAttributes="Bold" FontSize="16" />
+                    <Label Text="{l:Tr 'Planilha do Excel, CSV do app ou o CSV exportado do Discogs'}"
+                           FontSize="13" TextColor="{StaticResource TextSecondary}" />
+                    <Button Text="{l:Tr 'Importar (Excel, CSV ou Discogs)'}" Style="{StaticResource PrimaryButton}" Clicked="OnImportClicked" />
+                    <Button Text="{l:Tr 'Exportar (Excel ou CSV)'}" Style="{StaticResource GhostButton}" Clicked="OnExportClicked" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource Card}">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="{l:Tr 'Ferramentas'}" FontAttributes="Bold" FontSize="16" />
+                    <Button Text="{l:Tr 'Baixar capas'}" Style="{StaticResource GhostButton}" Clicked="OnDownloadCoversClicked" />
+                    <Button Text="{l:Tr 'Completar datas de lançamento'}" Style="{StaticResource GhostButton}" Clicked="OnCompleteDatesClicked" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource Card}">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="{l:Tr 'Backup da coleção'}" FontAttributes="Bold" FontSize="16" />
+                    <Label Text="{l:Tr 'Salva o banco e todas as capas em um arquivo .zip'}"
+                           FontSize="13" TextColor="{StaticResource TextSecondary}" />
+                    <Button Text="{l:Tr 'Criar backup'}" Style="{StaticResource GhostButton}" Clicked="OnBackupClicked" />
+                    <Button Text="{l:Tr 'Restaurar backup'}" Style="{StaticResource GhostButton}" Clicked="OnRestoreClicked" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource Card}">
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="{l:Tr 'Sobre o app'}" FontAttributes="Bold" FontSize="16" />
+                    <Label x:Name="VersionLabel" FontSize="13" TextColor="{StaticResource TextSecondary}" />
+                    <Label Text="MusicBrainz · Cover Art Archive" FontSize="12" TextColor="{StaticResource TextMuted}" />
+                </VerticalStackLayout>
+            </Border>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
