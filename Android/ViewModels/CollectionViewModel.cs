@@ -20,6 +20,15 @@ public sealed partial class FormatChip : ObservableObject
     [ObservableProperty] private bool isSelected;
 }
 
+/// <summary>Seção da lista quando a coleção está agrupada (por gênero, década, artista...).</summary>
+public sealed class AlbumGroup : List<Album>
+{
+    public AlbumGroup(string name) => Name = name;
+
+    public string Name { get; }
+    public string Title => $"{Name}  ·  {Count}";
+}
+
 /// <summary>Lista de álbuns da coleção (ou da lista de desejos), com busca e filtro por mídia.</summary>
 public sealed partial class CollectionViewModel : ObservableObject
 {
@@ -45,13 +54,44 @@ public sealed partial class CollectionViewModel : ObservableObject
     public string EmptyText => _wishlist ? Loc.T("Sua lista de desejos está vazia") : Loc.T("Sua coleção está vazia");
     public IReadOnlyList<FormatChip> Chips { get; }
 
-    [ObservableProperty] private IReadOnlyList<Album> items = Array.Empty<Album>();
+    // Álbuns soltos, ou seções (AlbumGroup) quando há agrupamento.
+    [ObservableProperty] private IEnumerable<object> items = Array.Empty<object>();
+    [ObservableProperty] private bool isGrouped;
+    [ObservableProperty] private bool isListView = Preferences.Get("view_list", false);
     [ObservableProperty] private string summary = "";
     [ObservableProperty] private string emptyMessage = "";
     [ObservableProperty] private bool isEmpty;
     [ObservableProperty] private string searchText = "";
 
     partial void OnSearchTextChanged(string value) => ApplyLater();
+
+    partial void OnIsListViewChanged(bool value)
+    {
+        Preferences.Set("view_list", value);
+        OnPropertyChanged(nameof(ViewToggleText));
+    }
+
+    /// <summary>O botão mostra para onde ele leva: ☰ abre a lista, ▦ volta para as capas.</summary>
+    public string ViewToggleText => IsListView ? "▦" : "☰";
+
+    public string SortKey => CollectionOrdering.NormalizeSort(SettingsStore.Current.CollectionSort);
+    public string GroupKey => CollectionOrdering.NormalizeGroup(SettingsStore.Current.CollectionGroup);
+
+    public void SetSort(string key)
+    {
+        SettingsStore.Current.CollectionSort = key;
+        SettingsStore.Save();
+        Apply();
+    }
+
+    public void SetGroup(string key)
+    {
+        SettingsStore.Current.CollectionGroup = key;
+        SettingsStore.Save();
+        Apply();
+    }
+
+    public void Refresh() => Apply();
 
     /// <summary>Lê o banco e atualiza a tela (chamado sempre que a página aparece).</summary>
     public void Reload()
@@ -94,8 +134,26 @@ public sealed partial class CollectionViewModel : ObservableObject
         if (text.Length > 0)
             query = query.Where(a => Matches(a.Title, text) || Matches(a.Artist, text));
 
-        var list = CollectionOrdering.Sort(query, CollectionOrdering.SortArtist, CollectionOrdering.GroupNone);
-        Items = list;
+        var group = GroupKey;
+        var list = CollectionOrdering.Sort(query, SortKey, group);
+        if (group == CollectionOrdering.GroupNone)
+        {
+            IsGrouped = false;
+            Items = list.Cast<object>().ToList();
+        }
+        else
+        {
+            var sections = new List<AlbumGroup>();
+            foreach (var album in list)
+            {
+                var name = CollectionOrdering.GroupLabel(album, group) ?? "";
+                if (sections.Count == 0 || sections[^1].Name != name)
+                    sections.Add(new AlbumGroup(name));
+                sections[^1].Add(album);
+            }
+            IsGrouped = true;
+            Items = sections;
+        }
 
         var total = list.Sum(a => a.Price);
         Summary = _wishlist

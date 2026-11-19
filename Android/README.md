@@ -9,7 +9,8 @@
 </p>
 
 ## Funcionalidades
-- Coleção em galeria de capas, com busca e filtro por mídia.
+- Coleção em galeria de capas ou em lista, com busca e filtro por mídia.
+- Ordenar (artista, título, A–Z e Z–A, ano de compra, lançamento, valor, nota) e agrupar (gênero, década, artista, ano de compra, mídia).
 - Lista de desejos, com o botão **Comprei!**.
 - Detalhes, edição e exclusão de álbuns, com capa pela galeria ou da internet e busca de dados no MusicBrainz.
 - Resumo da coleção: valor investido, ticket médio, gasto por ano, artistas mais frequentes e aniversários do mês.

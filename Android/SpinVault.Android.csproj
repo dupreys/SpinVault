@@ -13,8 +13,8 @@
 
     <ApplicationTitle>SpinVault</ApplicationTitle>
     <ApplicationId>com.spinvault.app</ApplicationId>
-    <ApplicationDisplayVersion>1.0.0</ApplicationDisplayVersion>
-    <ApplicationVersion>1</ApplicationVersion>
+    <ApplicationDisplayVersion>1.1.0</ApplicationDisplayVersion>
+    <ApplicationVersion>2</ApplicationVersion>
     <SupportedOSPlatformVersion>24.0</SupportedOSPlatformVersion>
 
     <!-- Os arquivos compartilhados com o app Windows usam este símbolo para deixar de fora o que é só do WPF -->

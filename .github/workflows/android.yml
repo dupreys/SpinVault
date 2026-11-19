@@ -67,8 +67,15 @@ jobs:
           name: apk
           path: dist/*.apk
 
+      - name: Montar notas da versão (Android/CHANGELOG.md)
+        run: |
+          awk -v v="$VERSION" '/^## /{ if (f) exit; if ($2 == v) { f=1; next } } f' Android/CHANGELOG.md > release-notes.md
+          [ -s release-notes.md ] || echo "SpinVault para Android $VERSION" > release-notes.md
+
       - name: Anexar à release
         if: github.ref_type == 'tag'
         uses: softprops/action-gh-release@v2
         with:
+          name: SpinVault para Android ${{ env.VERSION }}
           files: dist/*.apk
+          body_path: release-notes.md

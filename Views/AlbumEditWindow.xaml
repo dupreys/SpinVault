@@ -3,35 +3,39 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:l="clr-namespace:ColecaoMidias.Services"
         Title="{Binding WindowTitle}"
-        Width="800" SizeToContent="Height" ResizeMode="NoResize"
+        Width="840" SizeToContent="Height" ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
         AllowDrop="True" Drop="OnDrop"
         Background="{DynamicResource WindowBackgroundBrush}"
         Foreground="{DynamicResource TextPrimaryBrush}"
         FontFamily="{StaticResource AppFont}" FontSize="13">
-    <DockPanel Margin="28" LastChildFill="True">
+    <DockPanel Margin="22,18,22,16" LastChildFill="True">
         <!-- Rodapé fixo: erro e botões ficam sempre visíveis, mesmo com a janela rolando -->
-        <StackPanel DockPanel.Dock="Bottom">
-            <TextBlock Margin="0,10,0,0" TextWrapping="Wrap" MinHeight="18"
+        <Grid DockPanel.Dock="Bottom" Margin="0,8,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" VerticalAlignment="Center" Margin="0,0,12,0" TextWrapping="Wrap"
                        Foreground="{DynamicResource ErrorBrush}" Text="{Binding ErrorMessage}" />
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
                 <Button Content="{l:Tr 'Cancelar'}" Style="{StaticResource GhostButton}" Margin="0,0,8,0" IsCancel="True" />
                 <Button Content="{l:Tr 'Salvar'}" Style="{StaticResource PrimaryButton}" Padding="26,9" IsDefault="True"
                         Command="{Binding SaveCommand}" />
             </StackPanel>
-        </StackPanel>
+        </Grid>
 
         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
     <Grid Margin="0,0,8,0">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="268" />
+            <ColumnDefinition Width="212" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
         <!-- Capa -->
-        <StackPanel Grid.Column="0" Margin="0,0,28,0">
+        <StackPanel Grid.Column="0" Margin="0,0,24,0">
             <TextBlock Style="{StaticResource FieldLabel}" Text="{l:Tr 'Capa'}" />
-            <Grid Width="240" Height="240">
+            <Grid Width="188" Height="188" HorizontalAlignment="Left">
                 <ContentControl Content="{Binding}" ContentTemplate="{StaticResource DiscTemplate}" />
                 <Border CornerRadius="10">
                     <Border.Background>
@@ -40,40 +44,37 @@
                     </Border.Background>
                 </Border>
             </Grid>
-            <TextBlock Margin="0,10,0,0" TextWrapping="Wrap" TextAlignment="Center" FontSize="12"
-                       Foreground="{DynamicResource TextMutedBrush}"
-                       Text="{l:Tr 'Arraste uma imagem ou um link para esta janela, escolha um arquivo ou busque online.'}" />
-            <Button Margin="0,12,0,0" Content="{l:Tr 'Escolher capa…'}" Command="{Binding ChooseCoverCommand}" />
+            <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" FontSize="11" MinHeight="14"
+                       Foreground="{DynamicResource AccentBrush}" Text="{Binding CoverStatus}" />
+            <Button Margin="0,6,0,0" Content="{l:Tr 'Escolher capa…'}" Command="{Binding ChooseCoverCommand}"
+                    ToolTip="{l:Tr 'Arraste uma imagem ou um link para esta janela, escolha um arquivo ou busque online.'}" />
             <Button Margin="0,6,0,0" Content="{l:Tr '▣  Buscar capa online'}" Command="{Binding FetchCoverCommand}" />
-            <TextBlock Style="{StaticResource FieldLabel}" Margin="0,16,0,5" Text="{l:Tr 'Ou cole o link de uma imagem'}" />
-            <Grid>
+            <Grid Margin="0,10,0,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <TextBox x:Name="UrlBox" Grid.Column="0" Padding="9,8" FontSize="12"
+                <TextBox x:Name="UrlBox" Grid.Column="0" Padding="8,6" FontSize="12"
                          ToolTip="{l:Tr 'Ex.: clique com o botão direito numa imagem do Google e escolha &quot;Copiar endereço da imagem&quot;'}"
                          Text="{Binding ImageUrl, UpdateSourceTrigger=PropertyChanged}"
                          PreviewKeyDown="OnUrlKeyDown" />
-                <Button Grid.Column="1" Margin="6,0,0,0" Padding="12,8" Content="{l:Tr 'Baixar'}"
+                <Button Grid.Column="1" Margin="6,0,0,0" Padding="10,6" Content="{l:Tr 'Baixar'}"
                         Command="{Binding DownloadFromUrlCommand}" />
             </Grid>
-            <TextBlock Margin="0,8,0,0" TextWrapping="Wrap" TextAlignment="Center" FontSize="12" MinHeight="16"
-                       Foreground="{DynamicResource AccentBrush}" Text="{Binding CoverStatus}" />
-            <Button Margin="0,6,0,0" Style="{StaticResource GhostButton}" Content="{l:Tr 'Remover capa'}"
+            <TextBlock Margin="0,3,0,0" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"
+                       Text="{l:Tr 'Ou cole o link de uma imagem'}" />
+            <Button Margin="0,8,0,0" Style="{StaticResource GhostButton}" Content="{l:Tr 'Remover capa'}"
                     Command="{Binding RemoveCoverCommand}" />
         </StackPanel>
 
         <!-- Campos -->
         <StackPanel Grid.Column="1">
-            <TextBlock Text="{Binding WindowTitle}" FontSize="22" FontWeight="Bold" Margin="0,0,0,18" />
-
             <Grid>
                 <TextBlock Style="{StaticResource FieldLabel}" Text="{l:Tr 'Álbum'}" />
                 <TextBlock HorizontalAlignment="Right" FontSize="12" Foreground="{DynamicResource TextMutedBrush}"
                            Text="{l:Tr 'digite o nome e clique em Buscar dados'}" />
             </Grid>
-            <Grid Margin="0,0,0,4">
+            <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
@@ -85,23 +86,33 @@
                         Content="{l:Tr '⌕  Buscar dados'}" Command="{Binding LookupAlbumCommand}"
                         ToolTip="{l:Tr 'Busca o artista e a data de lançamento na internet'}" />
             </Grid>
-            <TextBlock Margin="0,0,0,8" TextWrapping="Wrap" FontSize="12" MinHeight="16"
+            <TextBlock Margin="0,3,0,0" TextWrapping="Wrap" FontSize="12"
                        Foreground="{DynamicResource AccentBrush}" Text="{Binding LookupStatus}" />
 
-            <TextBlock Style="{StaticResource FieldLabel}" Text="{l:Tr 'Artista'}" />
-            <TextBox Margin="0,0,0,12" Text="{Binding Artist, UpdateSourceTrigger=PropertyChanged}" />
+            <!-- Artista e mídia lado a lado -->
+            <Grid Margin="0,8,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                    <TextBlock Style="{StaticResource FieldLabel}" Text="{l:Tr 'Artista'}" />
+                    <TextBox Text="{Binding Artist, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+                <StackPanel Grid.Column="1">
+                    <TextBlock Style="{StaticResource FieldLabel}" Text="{l:Tr 'Mídia'}" />
+                    <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                        <RadioButton Style="{StaticResource ChipRadio}" GroupName="Format" Content="{l:Tr '♫  Vinil'}" Margin="0,0,6,0"
+                                     IsChecked="{Binding Format, Converter={StaticResource EnumToBool}, ConverterParameter=Vinyl}" />
+                        <RadioButton Style="{StaticResource ChipRadio}" GroupName="Format" Content="{l:Tr '◉  CD'}" Margin="0,0,6,0"
+                                     IsChecked="{Binding Format, Converter={StaticResource EnumToBool}, ConverterParameter=CD}" />
+                        <RadioButton Style="{StaticResource ChipRadio}" GroupName="Format" Content="{l:Tr '▤  Cassete'}"
+                                     IsChecked="{Binding Format, Converter={StaticResource EnumToBool}, ConverterParameter=Cassette}" />
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
 
-            <TextBlock Style="{StaticResource FieldLabel}" Text="{l:Tr 'Mídia'}" />
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                <RadioButton Style="{StaticResource ChipRadio}" GroupName="Format" Content="{l:Tr '♫  Vinil'}" Margin="0,0,8,0"
-                             IsChecked="{Binding Format, Converter={StaticResource EnumToBool}, ConverterParameter=Vinyl}" />
-                <RadioButton Style="{StaticResource ChipRadio}" GroupName="Format" Content="{l:Tr '◉  CD'}" Margin="0,0,8,0"
-                             IsChecked="{Binding Format, Converter={StaticResource EnumToBool}, ConverterParameter=CD}" />
-                <RadioButton Style="{StaticResource ChipRadio}" GroupName="Format" Content="{l:Tr '▤  Cassete'}"
-                             IsChecked="{Binding Format, Converter={StaticResource EnumToBool}, ConverterParameter=Cassette}" />
-            </StackPanel>
-
-            <Grid Margin="0,0,0,12">
+            <Grid Margin="0,0,0,10">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="*" />
@@ -123,11 +134,22 @@
                 </StackPanel>
             </Grid>
 
-            <!-- ===== Gênero e listas ===== -->
-            <TextBlock Style="{StaticResource FieldLabel}" Text="{l:Tr 'Gênero'}" />
-            <TextBox Text="{Binding Genre, UpdateSourceTrigger=PropertyChanged}"
-                     ToolTip="{l:Tr 'Ex.: Rock, MPB, Jazz… ou escolha uma sugestão abaixo'}" />
-            <ItemsControl Margin="-2,6,0,10" ItemsSource="{Binding GenreSuggestions}">
+            <!-- ===== Listas: o campo de nova lista fica na linha do título ===== -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="170" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Style="{StaticResource FieldLabel}" VerticalAlignment="Center" Text="{l:Tr 'Listas'}" />
+                <TextBox x:Name="NewTagBox" Grid.Column="1" Padding="8,4" FontSize="12"
+                         ToolTip="{l:Tr 'Digite o nome de uma lista nova (ex.: Jantar, Viagem) e aperte Enter'}"
+                         Text="{Binding NewTagText, UpdateSourceTrigger=PropertyChanged}"
+                         PreviewKeyDown="OnNewTagKeyDown" />
+                <Button Grid.Column="2" Margin="6,0,0,0" Padding="10,4" Content="{l:Tr '+  Criar lista'}"
+                        Command="{Binding AddTagCommand}" />
+            </Grid>
+            <ItemsControl Margin="0,6,0,4" ItemsSource="{Binding TagChoices}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <WrapPanel />
@@ -135,43 +157,15 @@
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Button Style="{StaticResource GhostButton}" Padding="9,3" FontSize="12" Margin="0,0,2,2"
-                                Content="{Binding}" CommandParameter="{Binding}"
-                                Command="{Binding DataContext.PickGenreCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-
-            <TextBlock Style="{StaticResource FieldLabel}" Text="{l:Tr 'Listas'}" />
-            <ItemsControl ItemsSource="{Binding TagChoices}">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <WrapPanel />
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <ToggleButton Style="{StaticResource ChipToggle}" Margin="0,0,6,6"
+                        <ToggleButton Style="{StaticResource ChipToggle}" Margin="0,0,6,4"
                                       Content="{Binding Display}" IsChecked="{Binding IsSelected, Mode=TwoWay}" />
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
-            <Grid Margin="0,0,0,12">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <TextBox x:Name="NewTagBox" Grid.Column="0" Padding="9,7" FontSize="12"
-                         ToolTip="{l:Tr 'Digite o nome de uma lista nova (ex.: Jantar, Viagem) e aperte Enter'}"
-                         Text="{Binding NewTagText, UpdateSourceTrigger=PropertyChanged}"
-                         PreviewKeyDown="OnNewTagKeyDown" />
-                <Button Grid.Column="1" Margin="6,0,0,0" Padding="12,7" Content="{l:Tr '+  Criar lista'}"
-                        Command="{Binding AddTagCommand}" />
-            </Grid>
 
             <!-- ===== Nota, local e conservação (só para o que já foi comprado) ===== -->
             <StackPanel Visibility="{Binding ShowCollectionFields, Converter={StaticResource BoolToVisibility}}">
-                <Grid Margin="0,0,0,12">
+                <Grid Margin="0,6,0,8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
@@ -206,7 +200,7 @@
                     <TextBlock HorizontalAlignment="Right" FontSize="12" Foreground="{DynamicResource AccentBrush}"
                                Text="{Binding MediaConditionLabel}" />
                 </Grid>
-                <ItemsControl Margin="0,0,0,8" ItemsSource="{Binding MediaConditions}">
+                <ItemsControl Margin="0,0,0,4" ItemsSource="{Binding MediaConditions}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <WrapPanel />
@@ -214,7 +208,7 @@
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <RadioButton Style="{StaticResource MiniChip}" GroupName="MediaCondition" Margin="0,0,5,5"
+                            <RadioButton Style="{StaticResource MiniChip}" GroupName="MediaCondition" Margin="0,0,5,4"
                                          Content="{Binding Label}" ToolTip="{Binding ToolTip}"
                                          IsChecked="{Binding IsSelected, Mode=TwoWay}" />
                         </DataTemplate>
@@ -226,7 +220,7 @@
                     <TextBlock HorizontalAlignment="Right" FontSize="12" Foreground="{DynamicResource AccentBrush}"
                                Text="{Binding CoverConditionLabel}" />
                 </Grid>
-                <ItemsControl Margin="0,0,0,12" ItemsSource="{Binding CoverConditions}">
+                <ItemsControl Margin="0,0,0,6" ItemsSource="{Binding CoverConditions}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <WrapPanel />
@@ -234,7 +228,7 @@
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <RadioButton Style="{StaticResource MiniChip}" GroupName="CoverCondition" Margin="0,0,5,5"
+                            <RadioButton Style="{StaticResource MiniChip}" GroupName="CoverCondition" Margin="0,0,5,4"
                                          Content="{Binding Label}" ToolTip="{Binding ToolTip}"
                                          IsChecked="{Binding IsSelected, Mode=TwoWay}" />
                         </DataTemplate>
@@ -243,7 +237,7 @@
             </StackPanel>
 
             <TextBlock Style="{StaticResource FieldLabel}" Text="{l:Tr 'Observações'}" />
-            <TextBox Height="70" AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top"
+            <TextBox Height="52" AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top"
                      VerticalScrollBarVisibility="Auto"
                      Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}" />
         </StackPanel>

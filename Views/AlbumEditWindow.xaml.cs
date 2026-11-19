@@ -14,7 +14,7 @@ public partial class AlbumEditWindow : Window
         InitializeComponent();
 
         // Com os campos novos a janela cresce: nunca passa da área útil da tela (o conteúdo rola).
-        MaxHeight = SystemParameters.WorkArea.Height - 20;
+        MaxHeight = SystemParameters.WorkArea.Height - 12;
 
         _viewModel = viewModel;
         DataContext = viewModel;

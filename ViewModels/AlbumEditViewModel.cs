@@ -40,7 +40,6 @@ public partial class AlbumEditViewModel : ObservableObject
     [ObservableProperty] private string notes = "";
 
     // ----- Notas pessoais, gênero e listas (v1.1) -----
-    [ObservableProperty] private string genre = "";
     [ObservableProperty] private string purchasePlace = "";
 
     [ObservableProperty]
@@ -64,13 +63,6 @@ public partial class AlbumEditViewModel : ObservableObject
     public ObservableCollection<ChoiceItem> MediaConditions { get; } = new();
     public ObservableCollection<ChoiceItem> CoverConditions { get; } = new();
     public ObservableCollection<TagChoice> TagChoices { get; } = new();
-    public IReadOnlyList<string> GenreSuggestions { get; private set; } = Array.Empty<string>();
-
-    private static readonly string[] CommonGenres = new[]
-    {
-        "Rock", "Pop", "MPB", "Jazz", "Blues", "Metal", "Rock progressivo", "Eletrônica",
-        "Clássica", "Hip hop", "Soul", "Reggae", "Samba", "Country", "Folk"
-    }.Select(Loc.T).ToArray();
     [ObservableProperty] private string errorMessage = "";
 
     /// <summary>Mensagem da busca de capa online (ex.: "Buscando capa…").</summary>
@@ -111,7 +103,6 @@ public partial class AlbumEditViewModel : ObservableObject
         PriceText = original.Price.ToString("0.00", Fmt.Current);
         Notes = original.Notes ?? "";
         CoverPreview = original.CoverFile;
-        Genre = original.Genre ?? "";
         PurchasePlace = original.PurchasePlace ?? "";
         MediaCondition = original.MediaCondition ?? "";
         CoverCondition = original.CoverCondition ?? "";
@@ -139,12 +130,11 @@ public partial class AlbumEditViewModel : ObservableObject
         }
 
         // Listas: as padrão + todas que já existem + as deste álbum.
-        var (knownGenres, knownTags) = _repository.GetKnownGenresAndTags();
+        var (_, knownTags) = _repository.GetKnownGenresAndTags();
         var selected = original?.TagList ?? Array.Empty<string>();
         foreach (var name in TagUtil.Defaults.Concat(knownTags).Concat(selected).Distinct(StringComparer.OrdinalIgnoreCase))
             TagChoices.Add(new TagChoice(name, selected.Contains(name, StringComparer.OrdinalIgnoreCase)));
 
-        GenreSuggestions = knownGenres.Concat(CommonGenres).Distinct(StringComparer.OrdinalIgnoreCase).Take(14).ToList();
     }
 
     partial void OnRatingChanged(int value)
@@ -156,9 +146,6 @@ public partial class AlbumEditViewModel : ObservableObject
     /// <summary>Clicar na estrela marca a nota; clicar de novo na mesma tira a nota.</summary>
     [RelayCommand]
     private void SetRating(int number) => Rating = Rating == number ? 0 : number;
-
-    [RelayCommand]
-    private void PickGenre(string? name) => Genre = name ?? "";
 
     [RelayCommand]
     private void AddTag()
@@ -425,7 +412,7 @@ public partial class AlbumEditViewModel : ObservableObject
                 CoverFile = coverFile,
                 Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim(),
                 IsWishlist = _isWishlist,
-                Genre = string.IsNullOrWhiteSpace(Genre) ? null : Genre.Trim(),
+                Genre = _original?.Genre,   // o gênero não é mais editado aqui; o que já estava salvo é mantido
                 Tags = TagUtil.Join(TagChoices.Where(t => t.IsSelected).Select(t => t.Name)),
                 Rating = Rating,
                 MediaCondition = MediaCondition.Length == 0 ? null : MediaCondition,

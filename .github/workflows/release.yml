@@ -52,9 +52,26 @@ jobs:
           name: instalador
           path: dist/*
 
+      - name: Montar notas da versão (CHANGELOG.md)
+        shell: pwsh
+        run: |
+          $v = $env:VERSION
+          $out = @(); $in = $false
+          foreach ($l in (Get-Content CHANGELOG.md -Encoding UTF8)) {
+            if ($l -match '^## ') {
+              if ($in) { break }
+              if ($l -match ("^##\s+" + [regex]::Escape($v) + "\b")) { $in = $true }
+              continue
+            }
+            if ($in) { $out += $l }
+          }
+          if ($out.Count -eq 0) { $out = @("SpinVault $v") }
+          ($out -join "`n").Trim() | Set-Content release-notes.md -Encoding UTF8
+
       - name: Publicar release
         if: github.ref_type == 'tag'
         uses: softprops/action-gh-release@v2
         with:
           files: dist/*
+          body_path: release-notes.md
           generate_release_notes: true

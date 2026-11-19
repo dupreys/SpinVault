@@ -65,15 +65,22 @@
             </Border>
             <Border Style="{StaticResource Card}">
                 <VerticalStackLayout Spacing="0">
-                    <Label Text="{l:Tr 'Gênero'}" Style="{StaticResource SectionLabel}" />
-                    <Entry Text="{Binding Genre}" />
+                    <Label Text="{l:Tr 'Minha nota'}" Style="{StaticResource SectionLabel}" />
+                    <Picker ItemsSource="{Binding RatingLabels}" SelectedIndex="{Binding RatingIndex}" />
                 </VerticalStackLayout>
             </Border>
 
-            <Border Style="{StaticResource Card}">
+            <Border Style="{StaticResource Card}" IsVisible="{Binding IsNotWishlist}">
                 <VerticalStackLayout Spacing="0">
-                    <Label Text="{l:Tr 'Minha nota'}" Style="{StaticResource SectionLabel}" />
-                    <Picker ItemsSource="{Binding RatingLabels}" SelectedIndex="{Binding RatingIndex}" />
+                    <Label Text="{l:Tr 'Conservação do disco / fita / CD'}" Style="{StaticResource SectionLabel}" />
+                    <Picker ItemsSource="{Binding ConditionLabels}" SelectedIndex="{Binding MediaConditionIndex}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource Card}" IsVisible="{Binding IsNotWishlist}">
+                <VerticalStackLayout Spacing="0">
+                    <Label Text="{l:Tr 'Conservação da capa / encarte'}" Style="{StaticResource SectionLabel}" />
+                    <Picker ItemsSource="{Binding ConditionLabels}" SelectedIndex="{Binding CoverConditionIndex}" />
                 </VerticalStackLayout>
             </Border>
 

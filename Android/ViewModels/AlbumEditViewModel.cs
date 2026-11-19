@@ -21,6 +21,8 @@ public sealed partial class AlbumEditViewModel : ObservableObject
 
         FormatLabels = Formats.Select(MediaFormatInfo.Label).ToList();
         RatingLabels = new List<string> { "—", "★", "★★", "★★★", "★★★★", "★★★★★" };
+        // O primeiro item ("—") é "sem avaliação"; os demais são os graus M, NM, VG+, VG, G+, G, F, P.
+        ConditionLabels = new[] { "—" }.Concat(Conditions.All.Select(c => c.Label)).ToList();
 
         if (original is null)
             return;
@@ -31,10 +33,11 @@ public sealed partial class AlbumEditViewModel : ObservableObject
         releaseDateText = original.ReleaseDate.HasValue ? Fmt.Date(original.ReleaseDate) : "";
         purchaseYearText = original.PurchaseYear?.ToString() ?? "";
         priceText = original.Price > 0 ? original.Price.ToString("0.00", Fmt.Current) : "";
-        genre = original.Genre ?? "";
         purchasePlace = original.PurchasePlace ?? "";
         notes = original.Notes ?? "";
         ratingIndex = Math.Clamp(original.Rating, 0, 5);
+        mediaConditionIndex = IndexOfCondition(original.MediaCondition);
+        coverConditionIndex = IndexOfCondition(original.CoverCondition);
         _coverFile = original.CoverFile;
     }
 
@@ -53,6 +56,16 @@ public sealed partial class AlbumEditViewModel : ObservableObject
 
     public IReadOnlyList<string> FormatLabels { get; }
     public IReadOnlyList<string> RatingLabels { get; }
+    public IReadOnlyList<string> ConditionLabels { get; }
+
+    private static int IndexOfCondition(string? code)
+    {
+        var i = Conditions.All.ToList().FindIndex(c => c.Code == code);
+        return i < 0 ? 0 : i + 1;
+    }
+
+    private static string? ConditionAt(int index) =>
+        index <= 0 || index > Conditions.All.Count ? null : Conditions.All[index - 1].Code;
 
     [ObservableProperty] private string title = "";
     [ObservableProperty] private string artist = "";
@@ -60,7 +73,8 @@ public sealed partial class AlbumEditViewModel : ObservableObject
     [ObservableProperty] private string releaseDateText = "";
     [ObservableProperty] private string purchaseYearText = "";
     [ObservableProperty] private string priceText = "";
-    [ObservableProperty] private string genre = "";
+    [ObservableProperty] private int mediaConditionIndex;
+    [ObservableProperty] private int coverConditionIndex;
     [ObservableProperty] private string purchasePlace = "";
     [ObservableProperty] private string notes = "";
     [ObservableProperty] private int ratingIndex;
@@ -217,10 +231,14 @@ public sealed partial class AlbumEditViewModel : ObservableObject
         album.ReleaseDate = release;
         album.PurchaseYear = year;
         album.Price = price;
-        album.Genre = string.IsNullOrWhiteSpace(Genre) ? null : Genre.Trim();
         album.PurchasePlace = string.IsNullOrWhiteSpace(PurchasePlace) ? null : PurchasePlace.Trim();
         album.Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim();
         album.Rating = Math.Clamp(RatingIndex, 0, 5);
+        if (!_wishlist)
+        {
+            album.MediaCondition = ConditionAt(MediaConditionIndex);
+            album.CoverCondition = ConditionAt(CoverConditionIndex);
+        }
         album.CoverFile = _coverFile;
         return album;
     }

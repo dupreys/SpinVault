@@ -1,6 +1,8 @@
 # Histórico de versões
 
 ## 1.2.0
+- **Novo álbum / Editar álbum:** a janela ficou bem mais baixa e compacta, para caber em monitores de tela curta. Artista e mídia ficam lado a lado, a nota e o local da compra dividem a mesma linha, o campo de nova lista ficou ao lado do título "Listas" e a capa ficou menor. Se ainda assim faltar espaço, a janela rola e os botões Salvar/Cancelar continuam sempre visíveis.
+- O campo **Gênero** saiu do formulário (o gênero já salvo nos álbuns continua aparecendo e filtrando na coleção).
 - **Idioma / Language:** o SpinVault agora também está em **English**. Em **Configurações → Idioma / Language** você escolhe *Português (Brasil)* ou *English*; o app reinicia sozinho para aplicar e lembra a escolha. Na primeira abertura ele segue o idioma do Windows.
   - Tudo é traduzido: menus, telas, botões, dicas, mensagens de erro e avisos, o relatório em PDF, a imagem de compartilhar, os graus de conservação e as listas padrão (Favoritos / Para ouvir viram Favorites / To listen).
   - Datas e valores seguem o idioma (25/12/2026 e R$ 1.234,56 em português; 12/25/2026 e R$ 1,234.56 em inglês). O campo de data e o de preço aceitam o formato do idioma escolhido.
