@@ -21,14 +21,24 @@ public sealed class UpdateService : IDisposable
 
     private readonly HttpClient _http;
     private readonly bool _ownsClient;
+    private readonly string _tagPrefix;
+    private readonly string _assetSuffix;
+    private readonly string? _assetContains;
 
     public string? Repository { get; }
     public Version Current { get; }
 
-    public UpdateService(string? repository, Version current, HttpClient? http = null)
+    /// <param name="tagPrefix">O repositório tem duas famílias de releases: "v1.3.0" (Windows) e "android-v1.1.1" (Android). Só as do prefixo certo contam.</param>
+    /// <param name="assetSuffix">Terminação do arquivo para baixar (".exe" no Windows, ".apk" no Android).</param>
+    /// <param name="assetContains">Texto que o nome do arquivo precisa ter ("Setup" para o instalador do Windows).</param>
+    public UpdateService(string? repository, Version current, HttpClient? http = null,
+                         string tagPrefix = "v", string assetSuffix = ".exe", string? assetContains = "Setup")
     {
         Repository = repository;
         Current = current;
+        _tagPrefix = tagPrefix;
+        _assetSuffix = assetSuffix;
+        _assetContains = assetContains;
         _ownsClient = http is null;
         _http = http ?? new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
         if (!_http.DefaultRequestHeaders.UserAgent.Any())
@@ -60,7 +70,8 @@ public sealed class UpdateService : IDisposable
 
         try
         {
-            using var response = await _http.GetAsync($"https://api.github.com/repos/{Repository}/releases/latest", ct);
+            // Não dá para usar "releases/latest": ela devolve a release mais recente de qualquer família (Windows ou Android).
+            using var response = await _http.GetAsync($"https://api.github.com/repos/{Repository}/releases?per_page=30", ct);
 
             if (response.StatusCode == HttpStatusCode.NotFound)
                 return new UpdateCheckResult(null, Loc.T("Nenhuma versão foi publicada ainda no GitHub."));
@@ -70,11 +81,31 @@ public sealed class UpdateService : IDisposable
 
             await using var stream = await response.Content.ReadAsStreamAsync(ct);
             using var doc = await JsonDocument.ParseAsync(stream, cancellationToken: ct);
-            var root = doc.RootElement;
 
-            var tag = Text(root, "tag_name");
-            if (!TryParseVersion(tag, out var latest))
-                return new UpdateCheckResult(null, Loc.F("Não entendi o número da última versão (\"{0}\").", tag), "bad-version");
+            JsonElement? release = null;
+            var latest = new Version(0, 0, 0);
+            var tag = "";
+            if (doc.RootElement.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var candidate in doc.RootElement.EnumerateArray())
+                {
+                    if (Flag(candidate, "draft") || Flag(candidate, "prerelease"))
+                        continue;
+                    var candidateTag = Text(candidate, "tag_name");
+                    if (!candidateTag.StartsWith(_tagPrefix, StringComparison.OrdinalIgnoreCase) ||
+                        !TryParseVersion(candidateTag[_tagPrefix.Length..], out var candidateVersion))
+                        continue;
+                    if (release is null || candidateVersion > latest)
+                    {
+                        release = candidate;
+                        latest = candidateVersion;
+                        tag = candidateTag;
+                    }
+                }
+            }
+
+            if (release is not { } root)
+                return new UpdateCheckResult(null, Loc.T("Nenhuma versão foi publicada ainda no GitHub."));
 
             if (latest <= Normalize(Current))
                 return new UpdateCheckResult(null, Loc.F("Você está com a versão mais recente ({0}).", Format(Current)));
@@ -85,7 +116,8 @@ public sealed class UpdateService : IDisposable
                 foreach (var asset in assets.EnumerateArray())
                 {
                     var name = Text(asset, "name");
-                    if (name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) && name.Contains("Setup", StringComparison.OrdinalIgnoreCase))
+                    if (name.EndsWith(_assetSuffix, StringComparison.OrdinalIgnoreCase) &&
+                        (_assetContains is null || name.Contains(_assetContains, StringComparison.OrdinalIgnoreCase)))
                     {
                         download = Text(asset, "browser_download_url");
                         break;
@@ -134,6 +166,9 @@ public sealed class UpdateService : IDisposable
         var n = Normalize(v);
         return $"{n.Major}.{n.Minor}.{n.Build}";
     }
+
+    private static bool Flag(JsonElement element, string name) =>
+        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.True;
 
     private static string Text(JsonElement element, string name) =>
         element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() ?? "" : "";

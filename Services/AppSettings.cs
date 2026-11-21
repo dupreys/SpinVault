@@ -21,6 +21,19 @@ public sealed class AppSettings
     public string? LastBackupFile { get; set; }
     public string? LastBackupError { get; set; }
 
+    // ----- Sincronização por pasta (v1.3) -----
+
+    /// <summary>Pasta de sincronização (ex.: dentro do OneDrive). Vazio = sincronização desligada.</summary>
+    public string? SyncFolder { get; set; }
+
+    /// <summary>Estado deste computador na última sincronização.</summary>
+    public string? SyncLocalFingerprint { get; set; }
+
+    /// <summary>Estado do backup da pasta na última sincronização.</summary>
+    public string? SyncRemoteStamp { get; set; }
+
+    public DateTime? LastSyncUtc { get; set; }
+
     // ----- Idioma -----
 
     /// <summary>"pt" ou "en". Vazio = ainda não escolhido (segue o idioma do Windows).</summary>

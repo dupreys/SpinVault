@@ -1,7 +1,7 @@
 ; Instalador do SpinVault (Inno Setup 6)
-; A versão pode ser passada pela linha de comando: ISCC /DAppVersion=1.2.0 SpinVault.iss
+; A versão pode ser passada pela linha de comando: ISCC /DAppVersion=1.3.0 SpinVault.iss
 #ifndef AppVersion
-  #define AppVersion "1.2.0"
+  #define AppVersion "1.3.0"
 #endif
 #define AppName "SpinVault"
 #define AppExe "SpinVault.exe"

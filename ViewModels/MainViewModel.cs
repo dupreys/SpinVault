@@ -1,5 +1,6 @@
 using System.Windows.Threading;
 using ColecaoMidias.Data;
+using ColecaoMidias.Models;
 using ColecaoMidias.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -46,11 +47,104 @@ public partial class MainViewModel : ObservableObject
         Collection.DataChanged += () => _dashboardStale = true;
 
         _autoBackup = new AutoBackupService(Database.AppFolder, SettingsStore.Current, SettingsStore.Save);
+        _sync = new FolderSyncService(Database.AppFolder, SettingsStore.Current, SettingsStore.Save,
+            () => repository.GetAll(false).Concat(repository.GetAll(true)).OrderBy(a => a.Id).ToList());
 
         UpdateThemeButtonText();
     }
 
     private bool _dashboardStale;
+
+    // ---------- Sincronização por pasta ----------
+
+    private readonly FolderSyncService _sync;
+    private int _syncing;
+
+    /// <summary>Compara este computador com a pasta de sincronização e resolve (envia, restaura ou pergunta).</summary>
+    public async Task SyncAsync(bool manual)
+    {
+        if (!_sync.Enabled || Interlocked.Exchange(ref _syncing, 1) == 1)
+            return;
+
+        var title = Loc.T("Sincronização");
+        try
+        {
+            var check = await Task.Run(() => _sync.Check());
+            switch (check.Action)
+            {
+                case SyncAction.NothingEmpty:
+                    if (manual) Dialogs.Info(title, Loc.T("Ainda não há backup na pasta e esta coleção está vazia."));
+                    break;
+
+                case SyncAction.UpToDate:
+                    if (manual) Dialogs.Info(title, Loc.T("Tudo certo: a coleção já está igual à da pasta."));
+                    break;
+
+                case SyncAction.Upload:
+                    await Task.Run(() => _sync.Upload());
+                    if (manual) Dialogs.Info(title, Loc.T("Coleção enviada para a pasta de sincronização."));
+                    break;
+
+                case SyncAction.Restore:
+                    await RestoreFromFolderAsync(check.Remote!, Loc.T("Há uma coleção mais nova na pasta de sincronização. Restaurar neste computador? A coleção daqui será substituída."));
+                    break;
+
+                case SyncAction.Ask:
+                    if (Dialogs.Confirm(title, Loc.T("Esta coleção e a da pasta de sincronização são diferentes.\n\nUsar a coleção da pasta? A coleção deste computador será substituída (o app guarda uma cópia de segurança antes).")))
+                        await RestoreFromFolderAsync(check.Remote!, null);
+                    else if (Dialogs.Confirm(title, Loc.T("Enviar a coleção deste computador para a pasta? A coleção que está lá será substituída.")))
+                        await Task.Run(() => _sync.Upload());
+                    break;
+            }
+        }
+        catch (Exception ex) when (manual)
+        {
+            Dialogs.Error(Loc.T("Não foi possível sincronizar"), ex.Message);
+        }
+        catch (Exception)
+        {
+            // Pasta fora do ar (pendrive, rede) ou erro passageiro: tenta de novo na próxima vez.
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _syncing, 0);
+        }
+    }
+
+    // question == null: o usuário já escolheu usar a pasta, então não pergunta de novo.
+    private async Task RestoreFromFolderAsync(SyncRemote remote, string? question)
+    {
+        var title = Loc.T("Sincronização");
+        var (albums, covers) = await Task.Run(() => _sync.Inspect(remote));
+
+        if (question is not null)
+        {
+            var message = question + "\n\n" +
+                          Loc.F("Backup na pasta: {0} álbuns e {1} capas, de {2}.", albums, covers, remote.ModifiedLocal.ToString("g", Fmt.Current));
+            if (!Dialogs.Confirm(title, message))
+                return;
+        }
+
+        await Task.Run(() => _sync.Restore(remote));
+        Collection.Reload();
+        Wishlist.Reload();
+        _dashboardStale = true;
+        Dialogs.Info(title, Loc.T("Coleção restaurada a partir da pasta de sincronização."));
+    }
+
+    /// <summary>Ao fechar o app: envia as alterações, mas só se a pasta não tiver sido alterada por outro aparelho.</summary>
+    public void SyncOnExit()
+    {
+        try
+        {
+            if (_sync.ShouldUploadOnExit())
+                _sync.Upload();
+        }
+        catch (Exception)
+        {
+            // Fechar o app nunca deve falhar por causa da sincronização; a próxima abertura resolve.
+        }
+    }
 
     // ---------- Backup automático e aviso de atualização ----------
 
@@ -81,6 +175,7 @@ public partial class MainViewModel : ObservableObject
     {
         await Task.Delay(TimeSpan.FromSeconds(6));
         await RunBackupIfDueAsync();
+        await SyncAsync(manual: false);
 
         var settings = SettingsStore.Current;
         if (settings.UpdateCheckEnabled
@@ -155,7 +250,7 @@ public partial class MainViewModel : ObservableObject
     private void OpenSettings()
     {
         var version = $"SpinVault {UpdateService.Format(_updateService.Current)}";
-        var viewModel = new SettingsViewModel(SettingsStore.Current, _autoBackup, () => CheckForUpdatesAsync(manual: true), version);
+        var viewModel = new SettingsViewModel(SettingsStore.Current, _autoBackup, _sync, () => SyncAsync(manual: true), () => CheckForUpdatesAsync(manual: true), version);
         Dialogs.ShowSettings(viewModel);
     }
 

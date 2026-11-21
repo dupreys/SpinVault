@@ -36,6 +36,8 @@ public partial class InsightsViewModel : ObservableObject
     public ObservableCollection<BarItem> SpendByMedia { get; } = new();
     public ObservableCollection<BarItem> SpendByArtist { get; } = new();
     public ObservableCollection<BarItem> TopArtists { get; } = new();
+    public ObservableCollection<BarItem> ByFormat { get; } = new();
+    public ObservableCollection<BarItem> ByDecade { get; } = new();
     public ObservableCollection<AnniversaryRow> Anniversaries { get; } = new();
     private List<AnniversaryRow> _allAnniversaries = new();
 
@@ -63,6 +65,8 @@ public partial class InsightsViewModel : ObservableObject
         Fill(SpendByMedia, _data.SpendByMedia, money: true);
         Fill(SpendByArtist, _data.SpendByArtist, money: true);
         FillCounts(TopArtists, _data.TopArtistsByCount);
+        FillCounts(ByFormat, DistributionService.ByFormat(_albums));
+        FillCounts(ByDecade, DistributionService.ByDecade(_albums));
 
         _allAnniversaries = _data.Anniversaries.Select(a => new AnniversaryRow(
             a.Album, a.Album.Title,
@@ -94,6 +98,14 @@ public partial class InsightsViewModel : ObservableObject
     }
 
     private static void FillCounts(ObservableCollection<BarItem> target, IReadOnlyList<SpendItem> items)
+    {
+        target.Clear();
+        var max = items.Count == 0 ? 1 : items.Max(i => i.Count);
+        foreach (var item in items)
+            target.Add(new BarItem(item.Label, item.Count, max, item.Count.ToString()));
+    }
+
+    private static void FillCounts(ObservableCollection<BarItem> target, IReadOnlyList<CountItem> items)
     {
         target.Clear();
         var max = items.Count == 0 ? 1 : items.Max(i => i.Count);

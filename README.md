@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <img alt="versão" src="https://img.shields.io/badge/vers%C3%A3o-1.2.0-F59E0B">
+  <img alt="versão" src="https://img.shields.io/badge/vers%C3%A3o-1.3.0-F59E0B">
   <img alt=".NET" src="https://img.shields.io/badge/.NET-8.0-512BD4">
   <img alt="plataforma" src="https://img.shields.io/badge/plataforma-Windows-0078D6">
   <img alt="idiomas" src="https://img.shields.io/badge/idiomas-Portugu%C3%AAs%20%7C%20English-34D399">
@@ -50,6 +50,7 @@
 - **Compartilhar**: salve um resumo da coleção como imagem (PNG, formato para redes sociais) ou como relatório em PDF.
 - Exportação para Excel (.xlsx) e CSV, com todos os campos (dá para importar de volta).
 - Backup e restauração completos (.zip com banco e capas).
+- **Sincronização entre aparelhos**: em Configurações, escolha uma pasta de nuvem (OneDrive, Google Drive, Dropbox) e o app mantém a coleção igual no Windows e no Android.
 - **Backup automático**: de tempos em tempos o app salva uma cópia da coleção na pasta que você escolher (por exemplo, no OneDrive) e mantém só os últimos backups.
 - **Aviso de atualização**: o app consulta a Release do GitHub e avisa quando existe uma versão nova (você decide se baixa; nada é instalado sozinho).
 - Temas escuro e claro.
@@ -58,13 +59,13 @@
 ## Instalação (para quem só quer usar)
 
 1. Abra a página de [**Releases**](../../releases/latest) deste repositório.
-2. Em *Assets*, baixe **`SpinVault-Setup-1.2.0.exe`**.
+2. Em *Assets*, baixe **`SpinVault-Setup-1.3.0.exe`**.
 3. Execute o arquivo e siga o assistente (não precisa ser administrador).
 4. Abra o **SpinVault** pelo menu Iniciar ou pelo atalho da área de trabalho.
 
 > **Aviso do Windows:** como o instalador não tem assinatura digital paga, o SmartScreen pode mostrar "O Windows protegeu seu computador". Clique em **Mais informações → Executar assim mesmo**.
 
-Prefere não instalar? Baixe também na Release o `SpinVault-portatil-1.2.0.zip`, extraia e execute o `SpinVault.exe`.
+Prefere não instalar? Baixe também na Release o `SpinVault-portatil-1.3.0.zip`, extraia e execute o `SpinVault.exe`.
 
 Não é preciso instalar o .NET: o aplicativo já vem com tudo que precisa.
 
@@ -81,15 +82,33 @@ O SpinVault fala **Português (Brasil)** e **English**.
 
 ## Android
 
-Há também uma versão para **Android** (.NET MAUI), na pasta [`Android/`](Android). Ela compartilha com o app do Windows o formato do banco e do backup, então uma coleção pode ser levada de um para o outro.
+Há também uma versão para **Android** (.NET MAUI), na pasta [`Android/`](Android). Ela compartilha com o app do Windows o formato do banco e do backup, então uma coleção pode ser levada de um para o outro. O app não está na Play Store: o `.apk` é instalado direto.
+
+**O que o app do Android faz**
+- Coleção em galeria de capas ou em lista, com busca, filtro por mídia e por emprestados, ordenação e agrupamento.
+- Lista de desejos com o botão **Comprei!**, e cadastro com capa, conservação do disco e da capa, onde comprou e nota.
+- **Empréstimos**, aviso de **álbuns repetidos** e **resumo** com gastos, gráficos por mídia e década e aniversários do mês.
+- Busca de capas e de datas de lançamento na internet (MusicBrainz), em um álbum ou em todos de uma vez.
+- Importar Excel, CSV e CSV do Discogs; exportar para Excel e CSV; backup e restauração em `.zip`, com cópia de segurança antes de substituir a coleção.
+- Português e English, tema escuro e claro, e aviso de versão nova a partir do GitHub.
+
+**Sincronizar com o Windows:** em **Configurações → Sincronização entre aparelhos**, nos dois apps, escolha a mesma pasta do OneDrive, Google Drive ou Dropbox. O app guarda a coleção nela, confere ao abrir e envia ao sair, e nunca troca uma coleção por outra sem perguntar. Não precisa de conta nem de login no SpinVault.
+
+**Para quem quer compilar:** Visual Studio 2022 17.14 (ou mais novo) com a carga .NET MAUI e o .NET 10 SDK. Os passos estão em [`Android/README.md`](Android/README.md).
 
 - **Baixar:** na página de [Releases](https://github.com/dupreys/SpinVault/releases), procure a versão `android-v...` e baixe o arquivo `.apk`. Abra no celular e permita instalar apps de fontes desconhecidas.
-- **Nuvem opcional:** o app Android pode entrar com a conta Google e guardar um backup na pasta oculta do seu Drive, restaurando a coleção em outro aparelho.
+- **Sincronização opcional:** escolha uma pasta do OneDrive, Google Drive ou Dropbox no Windows e a mesma no Android, e a coleção fica igual nos dois. Sem conta no SpinVault.
+<p>
+  <img src="docs/screenshots/android-colecao.png" alt="SpinVault para Android: coleção" width="200">
+  &nbsp;
+  <img src="docs/screenshots/android-resumo.png" alt="SpinVault para Android: resumo" width="200">
+</p>
+
 - Mais detalhes em [`Android/README.md`](Android/README.md). Política de privacidade e termos: [site do projeto](https://dupreys.github.io/SpinVault/).
 
 ## Licença
 
-Defina a licença antes de tornar o repositório público (por exemplo MIT). Sem licença, o código fica com todos os direitos reservados ao autor.
+Distribuído sob a **licença MIT**: você pode usar, copiar, modificar e redistribuir, mantendo o aviso de direitos autorais. Veja o arquivo [`LICENSE`](LICENSE).
 
 ## Créditos
 

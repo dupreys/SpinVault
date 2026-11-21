@@ -1,8 +1,15 @@
 # Histórico de versões
 
-## 1.2.0
+## 1.3.0
+- **Resumo com mais gráficos:** novas barras por mídia e década de lançamento, ao lado dos gráficos de gasto que já existiam.
+- **Mais formas de ordenar e agrupar** (igual ao app Android): Artista e Título de Z a A, ano de compra (mais recentes e mais antigos) e menor valor. Também dá para agrupar por **ano de compra** e por **mídia** (vinil, CD, cassete).
+- **Sincronização entre aparelhos:** em **Configurações → Sincronização entre aparelhos**, escolha uma pasta do OneDrive, Google Drive ou Dropbox. O SpinVault guarda a coleção nela e o serviço de nuvem leva para os outros aparelhos; no Android, escolha a mesma pasta. Não precisa de conta no SpinVault.
+  - O app confere a pasta ao abrir e envia as alterações ao fechar. Nunca troca uma coleção por outra sem perguntar, a não ser que este computador não tenha alterações novas.
+  - Há os botões **Sincronizar agora**, **Abrir pasta** e **Parar de sincronizar**.
 - **Novo álbum / Editar álbum:** a janela ficou bem mais baixa e compacta, para caber em monitores de tela curta. Artista e mídia ficam lado a lado, a nota e o local da compra dividem a mesma linha, o campo de nova lista ficou ao lado do título "Listas" e a capa ficou menor. Se ainda assim faltar espaço, a janela rola e os botões Salvar/Cancelar continuam sempre visíveis.
 - O campo **Gênero** saiu do formulário (o gênero já salvo nos álbuns continua aparecendo e filtrando na coleção).
+
+## 1.2.0
 - **Idioma / Language:** o SpinVault agora também está em **English**. Em **Configurações → Idioma / Language** você escolhe *Português (Brasil)* ou *English*; o app reinicia sozinho para aplicar e lembra a escolha. Na primeira abertura ele segue o idioma do Windows.
   - Tudo é traduzido: menus, telas, botões, dicas, mensagens de erro e avisos, o relatório em PDF, a imagem de compartilhar, os graus de conservação e as listas padrão (Favoritos / Para ouvir viram Favorites / To listen).
   - Datas e valores seguem o idioma (25/12/2026 e R$ 1.234,56 em português; 12/25/2026 e R$ 1,234.56 em inglês). O campo de data e o de preço aceitam o formato do idioma escolhido.

@@ -13,21 +13,33 @@ public static class CollectionOrdering
     public const string SortPrice = "price";
     public const string SortRating = "rating";
     public const string SortAdded = "added";
+    public const string SortArtistDesc = "artist_desc";
+    public const string SortTitleDesc = "title_desc";
+    public const string SortPurchaseNewest = "purchase_new";
+    public const string SortPurchaseOldest = "purchase_old";
+    public const string SortPriceLow = "price_low";
 
     // ----- Chaves de agrupamento -----
     public const string GroupNone = "none";
     public const string GroupGenre = "genre";
     public const string GroupDecade = "decade";
     public const string GroupArtist = "artist";
+    public const string GroupYear = "year";
+    public const string GroupFormat = "format";
 
     // Propriedades (e não campos) para que os nomes sejam traduzidos no idioma já escolhido, e não no da primeira leitura.
     public static (string Key, string Label)[] SortOptions => new[]
     {
         (SortArtist, Loc.T("Artista (A–Z)")),
+        (SortArtistDesc, Loc.T("Artista (Z–A)")),
         (SortTitle, Loc.T("Título (A–Z)")),
+        (SortTitleDesc, Loc.T("Título (Z–A)")),
+        (SortPurchaseNewest, Loc.T("Ano de compra: mais recentes")),
+        (SortPurchaseOldest, Loc.T("Ano de compra: mais antigos")),
         (SortOldest, Loc.T("Lançamento: mais antigos")),
         (SortNewest, Loc.T("Lançamento: mais novos")),
         (SortPrice, Loc.T("Maior valor")),
+        (SortPriceLow, Loc.T("Menor valor")),
         (SortRating, Loc.T("Melhor nota")),
         (SortAdded, Loc.T("Adicionados por último")),
     };
@@ -38,6 +50,8 @@ public static class CollectionOrdering
         (GroupGenre, Loc.T("Gênero")),
         (GroupDecade, Loc.T("Década")),
         (GroupArtist, Loc.T("Artista")),
+        (GroupYear, Loc.T("Ano de compra")),
+        (GroupFormat, Loc.T("Mídia")),
     };
 
     public static string NormalizeSort(string? key) =>
@@ -55,6 +69,8 @@ public static class CollectionOrdering
         GroupGenre => album.HasGenre ? album.Genre!.Trim() : NoGenre,
         GroupDecade => album.Decade is { } d ? Decades.Label(d) : NoDate,
         GroupArtist => string.IsNullOrWhiteSpace(album.Artist) ? Loc.T("Sem artista") : album.Artist.Trim(),
+        GroupYear => album.PurchaseYear?.ToString() ?? Loc.T("Sem ano"),
+        GroupFormat => MediaFormatInfo.Label(album.Format),
         _ => null
     };
 
@@ -73,12 +89,19 @@ public static class CollectionOrdering
             GroupGenre => albums.OrderBy(a => a.HasGenre ? 0 : 1).ThenBy(a => a.HasGenre ? a.Genre!.Trim() : "", text),
             GroupDecade => albums.OrderBy(a => a.Decade is null ? 1 : 0).ThenBy(a => a.Decade ?? 0),
             GroupArtist => albums.OrderBy(a => a.Artist.Trim(), text),
+            GroupYear => albums.OrderBy(a => a.PurchaseYear is null ? 1 : 0).ThenByDescending(a => a.PurchaseYear ?? 0),
+            GroupFormat => albums.OrderBy(a => (int)a.Format),
             _ => albums.OrderBy(_ => 0)
         };
 
         var result = sortKey switch
         {
             SortTitle => ordered.ThenBy(a => a.Title, text).ThenBy(a => a.Artist, text),
+            SortTitleDesc => ordered.ThenByDescending(a => a.Title, text).ThenBy(a => a.Artist, text),
+            SortArtistDesc => ordered.ThenByDescending(a => a.Artist, text).ThenBy(a => a.ReleaseDate).ThenBy(a => a.Title, text),
+            SortPurchaseNewest => ordered.ThenBy(a => a.PurchaseYear is null ? 1 : 0).ThenByDescending(a => a.PurchaseYear).ThenBy(a => a.Artist, text).ThenBy(a => a.Title, text),
+            SortPurchaseOldest => ordered.ThenBy(a => a.PurchaseYear is null ? 1 : 0).ThenBy(a => a.PurchaseYear).ThenBy(a => a.Artist, text).ThenBy(a => a.Title, text),
+            SortPriceLow => ordered.ThenBy(a => a.Price).ThenBy(a => a.Artist, text).ThenBy(a => a.Title, text),
             SortOldest => ordered.ThenBy(a => a.ReleaseDate is null ? 1 : 0).ThenBy(a => a.ReleaseDate).ThenBy(a => a.Artist, text).ThenBy(a => a.Title, text),
             SortNewest => ordered.ThenBy(a => a.ReleaseDate is null ? 1 : 0).ThenByDescending(a => a.ReleaseDate).ThenBy(a => a.Artist, text).ThenBy(a => a.Title, text),
             SortPrice => ordered.ThenByDescending(a => a.Price).ThenBy(a => a.Artist, text).ThenBy(a => a.Title, text),

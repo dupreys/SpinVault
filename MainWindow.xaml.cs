@@ -14,6 +14,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         SourceInitialized += (_, _) => WindowTheme.Apply(this, ThemeService.Current == AppTheme.Dark);
         Loaded += (_, _) => (DataContext as MainViewModel)?.StartBackgroundTasks();
+        Closing += (_, _) => (DataContext as MainViewModel)?.SyncOnExit();
         SizeChanged += (_, e) => ApplyLayout(e.NewSize.Width);
         Loaded += (_, _) => ApplyLayout(ActualWidth);
     }

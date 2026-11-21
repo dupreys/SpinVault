@@ -37,6 +37,31 @@
                     </StackPanel>
                 </Border>
 
+                <!-- ===== Sincronização entre aparelhos ===== -->
+                <Border Padding="18" CornerRadius="14" Margin="0,0,0,16"
+                        Background="{DynamicResource SurfaceBrush}"
+                        BorderBrush="{DynamicResource LineBrush}" BorderThickness="1">
+                    <StackPanel>
+                        <TextBlock Text="{l:Tr 'Sincronização entre aparelhos'}" FontSize="16" FontWeight="Bold" />
+                        <TextBlock Margin="0,6,0,12" TextWrapping="Wrap" Foreground="{DynamicResource TextSecondaryBrush}"
+                                   Text="{l:Tr 'Escolha uma pasta do OneDrive, Google Drive ou Dropbox. O SpinVault guarda a coleção nela e o serviço de nuvem leva para os outros aparelhos (o Android escolhe a mesma pasta). Não precisa de conta no SpinVault.'}" />
+                        <TextBlock TextWrapping="Wrap" Text="{Binding SyncFolderText}" />
+                        <TextBlock Margin="0,4,0,0" TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"
+                                   Text="{Binding SyncStatusText}" />
+                        <WrapPanel Margin="0,12,0,0">
+                            <Button Style="{StaticResource PrimaryButton}" Padding="14,7" Margin="0,0,8,6" Content="{l:Tr 'Escolher pasta…'}" Command="{Binding ChooseSyncFolderCommand}" />
+                            <Button Style="{StaticResource GhostButton}" Margin="0,0,8,6" Content="{l:Tr 'Sincronizar agora'}" Command="{Binding SyncNowCommand}"
+                                    Visibility="{Binding SyncEnabled, Converter={StaticResource BoolToVisibility}}" />
+                            <Button Style="{StaticResource GhostButton}" Margin="0,0,8,6" Content="{l:Tr 'Abrir pasta'}" Command="{Binding OpenSyncFolderCommand}"
+                                    Visibility="{Binding SyncEnabled, Converter={StaticResource BoolToVisibility}}" />
+                            <Button Style="{StaticResource GhostButton}" Margin="0,0,8,6" Content="{l:Tr 'Parar de sincronizar'}" Command="{Binding StopSyncCommand}"
+                                    Visibility="{Binding SyncEnabled, Converter={StaticResource BoolToVisibility}}" />
+                        </WrapPanel>
+                        <TextBlock Margin="0,4,0,0" FontSize="11" Foreground="{DynamicResource AccentBrush}"
+                                   Text="{l:Tr 'Sincronizando…'}" Visibility="{Binding IsSyncing, Converter={StaticResource BoolToVisibility}}" />
+                    </StackPanel>
+                </Border>
+
                 <!-- ===== Backup automático ===== -->
                 <Border Padding="18" CornerRadius="14" Margin="0,0,0,16"
                         Background="{DynamicResource SurfaceBrush}"

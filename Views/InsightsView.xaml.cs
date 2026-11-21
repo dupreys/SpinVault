@@ -11,6 +11,7 @@ public partial class InsightsView : UserControl
     private void OnSizeChanged(object sender, SizeChangedEventArgs e)
     {
         ResponsiveLayout.SetColumns(SpendGrid, e.NewSize.Width < 1000 ? 1 : 3, gap: 12);
+        ResponsiveLayout.SetColumns(DistGrid, e.NewSize.Width < 1000 ? 1 : 2, gap: 12);
         ResponsiveLayout.SetColumns(KpiGrid, e.NewSize.Width < 600 ? 1 : 3, gap: 12);
     }
 

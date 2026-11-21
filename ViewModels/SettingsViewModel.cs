@@ -11,14 +11,19 @@ public partial class SettingsViewModel : ObservableObject
 {
     private readonly AppSettings _settings;
     private readonly AutoBackupService _backup;
+    private readonly FolderSyncService _sync;
+    private readonly Func<Task> _syncNow;
     private readonly Func<Task<UpdateCheckResult>> _checkUpdates;
     private readonly bool _loading = true;
     private UpdateInfo? _update;
 
-    public SettingsViewModel(AppSettings settings, AutoBackupService backup, Func<Task<UpdateCheckResult>> checkUpdates, string versionText)
+    public SettingsViewModel(AppSettings settings, AutoBackupService backup, FolderSyncService sync, Func<Task> syncNow,
+                             Func<Task<UpdateCheckResult>> checkUpdates, string versionText)
     {
         _settings = settings;
         _backup = backup;
+        _sync = sync;
+        _syncNow = syncNow;
         _checkUpdates = checkUpdates;
         VersionText = versionText;
 
@@ -39,6 +44,7 @@ public partial class SettingsViewModel : ObservableObject
 
         _loading = false;
         RefreshBackupTexts();
+        RefreshSyncTexts();
     }
 
     public string VersionText { get; }
@@ -57,6 +63,10 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string updateText = "";
     [ObservableProperty] private bool hasUpdate;
     [ObservableProperty] private bool usingCustomFolder;
+    [ObservableProperty] private bool syncEnabled;
+    [ObservableProperty] private string syncFolderText = "";
+    [ObservableProperty] private string syncStatusText = "";
+    [ObservableProperty] private bool isSyncing;
 
     private void AddOptions(ObservableCollection<ChoiceItem> target, (int Value, string Label)[] items, int current, Action<int> apply)
     {
@@ -137,6 +147,56 @@ public partial class SettingsViewModel : ObservableObject
             LastBackupFailed = false;
             LastBackupText = Loc.T("Nenhum backup automático foi feito ainda.");
         }
+    }
+
+    // ---------- Sincronização por pasta ----------
+
+    private void RefreshSyncTexts()
+    {
+        SyncEnabled = _sync.Enabled;
+        SyncFolderText = _sync.Enabled ? _sync.Folder : Loc.T("Nenhuma pasta escolhida. A sincronização está desligada.");
+        var last = _sync.LastSyncText;
+        SyncStatusText = _sync.Enabled && last.Length > 0 ? Loc.F("Última sincronização: {0}.", last) : "";
+    }
+
+    [RelayCommand]
+    private async Task ChooseSyncFolderAsync()
+    {
+        var picked = Dialogs.PickFolder(Loc.T("Escolha a pasta de sincronização"), _sync.Enabled ? _sync.Folder : null);
+        if (picked is null) return;
+
+        _sync.SetFolder(picked);
+        RefreshSyncTexts();
+        await SyncNowAsync();
+    }
+
+    [RelayCommand]
+    private async Task SyncNowAsync()
+    {
+        IsSyncing = true;
+        try
+        {
+            await _syncNow();
+        }
+        finally
+        {
+            IsSyncing = false;
+            RefreshSyncTexts();
+        }
+    }
+
+    [RelayCommand]
+    private void StopSync()
+    {
+        _sync.SetFolder(null);
+        RefreshSyncTexts();
+    }
+
+    [RelayCommand]
+    private void OpenSyncFolder()
+    {
+        if (_sync.Enabled)
+            Dialogs.OpenFolder(_sync.Folder);
     }
 
     [RelayCommand]

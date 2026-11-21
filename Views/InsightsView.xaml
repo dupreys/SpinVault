@@ -192,6 +192,22 @@
                 </Border>
             </UniformGrid>
 
+            <!-- Como a coleção se divide: mídia e década -->
+            <UniformGrid x:Name="DistGrid" Columns="2" Margin="0,0,0,12">
+                <Border Style="{StaticResource Card}" Margin="0,0,6,0">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource CardTitle}" Text="{l:Tr 'Por mídia'}" />
+                        <ItemsControl ItemsSource="{Binding ByFormat}" ItemTemplate="{StaticResource BarRow}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Card}" Margin="6,0,0,0">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource CardTitle}" Text="{l:Tr 'Por década de lançamento'}" />
+                        <ItemsControl ItemsSource="{Binding ByDecade}" ItemTemplate="{StaticResource BarRow}" />
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
             <!-- Ranking por quantidade -->
             <Border Style="{StaticResource Card}" Margin="0,0,0,12">
                 <StackPanel>
